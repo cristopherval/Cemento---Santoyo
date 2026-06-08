@@ -386,25 +386,13 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; marg
 .money.pos, .money.pos strong { color: #15a05a; }
 .money.neg, .money.neg strong { color: var(--red); }
 
-/* ===================== MONTHLY BALANCE ===================== */
-.month-balance { display: flex; flex-direction: column; gap: 8px; }
-.monthrow {
-  background: var(--surface-2); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); padding: 10px 12px; cursor: pointer;
-  transition: border-color .15s;
-}
-.monthrow:active { filter: brightness(1.05); }
-.monthrow.is-active { border-color: var(--red); box-shadow: 0 0 0 2px var(--red-soft); }
+/* ===================== MONTH FILTER ===================== */
 .month-filter {
-  width: auto; min-width: 0; flex-shrink: 0;
+  width: auto; min-width: 0; flex-shrink: 0; max-width: 55%;
   padding: 7px 10px; font-size: .82rem; font-weight: 700;
   border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: var(--input-bg); color: var(--text);
 }
-.monthrow__head { display: flex; align-items: center; justify-content: space-between; }
-.monthrow__head strong { font-size: 1.05rem; font-weight: 800; }
-.monthrow__head .money { font-variant-numeric: tabular-nums; }
-.monthrow__sub { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-size: .74rem; color: var(--text-dim); }
 
 /* tall dialog (job editor) */
 .dialog__panel--tall { max-width: 440px; max-height: 88vh; overflow-y: auto; }

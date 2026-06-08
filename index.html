@@ -240,24 +240,17 @@
     <!-- ---------- FINANCE VIEW ---------- -->
     <section class="view" id="view-finance">
       <div class="card">
-        <h2 class="card__title" data-i18n="finance_title">Finanzas</h2>
-        <p class="card__hint" data-i18n="finance_hint">Trabajos confirmados, anticipos y balance por mes.</p>
-        <div id="monthlyBalance"></div>
-      </div>
-
-      <div class="card">
-        <h2 class="card__title" id="g_title" data-i18n="grand_total">Total general</h2>
+        <div class="invoice-form__head">
+          <h2 class="card__title" data-i18n="finance_title">Finanzas</h2>
+          <select id="monthFilter" class="month-filter" aria-label="Mes"></select>
+        </div>
         <div class="totalrow"><span data-i18n="collected">Cobrado</span><strong id="g_collected">$0.00</strong></div>
         <div class="totalrow"><span data-i18n="to_collect">Por cobrar</span><strong id="g_pending">$0.00</strong></div>
-        <div class="totalrow"><span data-i18n="total_costs">Total costos</span><strong id="g_costs">$0.00</strong></div>
         <div class="totalrow totalrow--profit"><span data-i18n="net_profit">Ganancia limpia</span><strong id="g_net">$0.00</strong></div>
       </div>
 
       <div class="card">
-        <div class="invoice-form__head">
-          <h2 class="card__title" data-i18n="saved_jobs">Trabajos guardados</h2>
-          <select id="monthFilter" class="month-filter" aria-label="Mes"></select>
-        </div>
+        <h2 class="card__title" data-i18n="saved_jobs">Trabajos guardados</h2>
         <div id="financeList"></div>
       </div>
     </section>

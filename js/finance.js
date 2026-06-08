@@ -76,19 +76,16 @@
     return months[(+m || 1) - 1] ? `${months[(+m || 1) - 1]} ${y}` : key;
   }
 
-  /* ---------- Monthly balance + grand totals ---------- */
+  /* ---------- Month filter + totals ---------- */
   function render() {
     const jobs = Storage.getJobs();
     // drop a stale filter if that month no longer has jobs
     if (monthFilter && !jobs.some((j) => monthKey(j) === monthFilter)) monthFilter = '';
     const filtered = monthFilter ? jobs.filter((j) => monthKey(j) === monthFilter) : jobs;
 
-    renderMonthly(jobs);
     renderFilter(jobs);
     renderGrand(filtered);
     renderJobs(filtered);
-    const title = $('g_title');
-    if (title) title.textContent = monthFilter ? monthLabel(monthFilter) : I18n.t('grand_total_all');
   }
 
   function renderFilter(jobs) {
@@ -100,55 +97,12 @@
     sel.value = monthFilter;
   }
 
-  function renderMonthly(jobs) {
-    const wrap = $('monthlyBalance');
-    if (!wrap) return;
-    if (!jobs.length) { wrap.innerHTML = `<p class="muted">${I18n.t('finance_empty')}</p>`; return; }
-
-    const byMonth = {};
-    jobs.forEach((j) => {
-      const key = (j.date || '').slice(0, 7) || '0000-00';
-      (byMonth[key] = byMonth[key] || []).push(j);
-    });
-    const keys = Object.keys(byMonth).sort().reverse();
-
-    wrap.innerHTML = `<div class="month-balance">${keys.map((key) => {
-      const list = byMonth[key];
-      const net = list.reduce((s, j) => s + Calc.num(j.net), 0);
-      const collected = list.reduce((s, j) => s + Calc.num(j.paid), 0);
-      const pending = list.reduce((s, j) => s + Calc.num(j.balance), 0);
-      const costs = list.reduce((s, j) => s + Calc.num(j.totalCosts), 0);
-      return `
-        <div class="monthrow${key === monthFilter ? ' is-active' : ''}" data-month="${key}">
-          <div class="monthrow__head">
-            <strong>${monthLabel(key)}</strong>
-            <strong class="money ${net < 0 ? 'neg' : 'pos'}">${Calc.fmtMoney(net)}</strong>
-          </div>
-          <div class="monthrow__sub">
-            <span>${I18n.t('collected')}: ${Calc.fmtMoney(collected)}</span>
-            <span>${I18n.t('to_collect')}: ${Calc.fmtMoney(pending)}</span>
-            <span>${I18n.t('total_costs')}: ${Calc.fmtMoney(costs)}</span>
-          </div>
-        </div>`;
-    }).join('')}</div>`;
-
-    // tap a month to filter the list (tap again to clear)
-    wrap.querySelectorAll('[data-month]').forEach((el) => el.addEventListener('click', () => {
-      monthFilter = (monthFilter === el.dataset.month) ? '' : el.dataset.month;
-      render();
-      const list = $('financeList');
-      if (list) list.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }));
-  }
-
   function renderGrand(jobs) {
     const collected = jobs.reduce((s, j) => s + Calc.num(j.paid), 0);
     const pending = jobs.reduce((s, j) => s + Calc.num(j.balance), 0);
-    const costs = jobs.reduce((s, j) => s + Calc.num(j.totalCosts), 0);
     const net = jobs.reduce((s, j) => s + Calc.num(j.net), 0);
     $('g_collected').textContent = Calc.fmtMoney(collected);
     $('g_pending').textContent = Calc.fmtMoney(pending);
-    $('g_costs').textContent = Calc.fmtMoney(costs);
     $('g_net').textContent = Calc.fmtMoney(net);
     $('g_net').classList.toggle('is-negative', net < 0);
   }
@@ -288,6 +242,9 @@
     document.querySelectorAll('[data-close-job]').forEach((el) =>
       el.addEventListener('click', () => App.closeModal('jobEditModal')));
     document.addEventListener('i18n:changed', render);
+    // open on the most recent month with jobs by default
+    const keys = [...new Set(Storage.getJobs().map(monthKey))].sort().reverse();
+    if (keys.length) monthFilter = keys[0];
     render();
   }
 
