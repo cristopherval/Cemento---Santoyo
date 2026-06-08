@@ -361,6 +361,56 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; marg
 .histitem__actions { display: flex; gap: 6px; flex-shrink: 0; }
 .muted { color: var(--text-dim); text-align: center; padding: 24px 0; }
 
+/* ===================== STATUS BADGES ===================== */
+.badge {
+  display: inline-block; align-self: flex-start;
+  font-size: .64rem; font-weight: 800; text-transform: uppercase; letter-spacing: .5px;
+  padding: 3px 8px; border-radius: 999px; margin-bottom: 4px;
+}
+.badge--pendiente { background: var(--surface); color: var(--text-dim); border: 1px solid var(--border); }
+.badge--aceptada, .badge--parcial { background: #fff4d6; color: #8a6d00; }
+.badge--confirmada, .badge--pagado { background: #d8f3e3; color: #0d7a43; }
+
+/* ===================== QUOTE / JOB LIST ITEMS ===================== */
+.histitem--quote { flex-direction: column; align-items: stretch; }
+.histitem--quote .histitem__actions,
+.histitem__actions--wrap { flex-wrap: wrap; margin-top: 10px; }
+.histitem--quote .histitem__actions .btn { flex: 1 1 auto; }
+.histitem--quote .histitem__actions .btn[disabled] { opacity: .5; pointer-events: none; }
+
+.histitem--job { cursor: pointer; }
+.histitem--job:active { filter: brightness(1.05); }
+.histitem__net { display: flex; flex-direction: column; align-items: flex-end; text-align: right; flex-shrink: 0; }
+.histitem__net span { font-size: .66rem; color: var(--text-dim); font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
+.histitem__net strong { font-size: 1.2rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.money.pos, .money.pos strong { color: #15a05a; }
+.money.neg, .money.neg strong { color: var(--red); }
+
+/* ===================== MONTHLY BALANCE ===================== */
+.month-balance { display: flex; flex-direction: column; gap: 8px; }
+.monthrow {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 12px; cursor: pointer;
+  transition: border-color .15s;
+}
+.monthrow:active { filter: brightness(1.05); }
+.monthrow.is-active { border-color: var(--red); box-shadow: 0 0 0 2px var(--red-soft); }
+.month-filter {
+  width: auto; min-width: 0; flex-shrink: 0;
+  padding: 7px 10px; font-size: .82rem; font-weight: 700;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--input-bg); color: var(--text);
+}
+.monthrow__head { display: flex; align-items: center; justify-content: space-between; }
+.monthrow__head strong { font-size: 1.05rem; font-weight: 800; }
+.monthrow__head .money { font-variant-numeric: tabular-nums; }
+.monthrow__sub { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-size: .74rem; color: var(--text-dim); }
+
+/* tall dialog (job editor) */
+.dialog__panel--tall { max-width: 440px; max-height: 88vh; overflow-y: auto; }
+.dialog__panel--tall .invoice-form__head { margin-bottom: 14px; }
+.dialog__panel--tall .invoice-form__head h2 { margin: 0; font-size: 1.15rem; }
+
 /* ===================== TOAST ===================== */
 .toast {
   position: fixed; left: 50%; bottom: calc(var(--nav-h) + 20px);

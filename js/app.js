@@ -58,14 +58,16 @@
       b.addEventListener('click', () => setTheme(b.dataset.theme)));
 
     $('clearDataBtn').addEventListener('click', () => {
-      if (confirm(I18n.t('confirm_clear'))) { Storage.clearHistory(); Invoice.renderHistory(); toast(I18n.t('saved')); }
+      if (confirm(I18n.t('confirm_clear'))) {
+        Storage.clearHistory(); Storage.clearQuotes(); Storage.clearJobs();
+        if (window.Quotes) Quotes.renderList();
+        if (window.Finance) Finance.render();
+        Invoice.renderHistory();
+        toast(I18n.t('saved'));
+      }
     });
 
-    $('toInvoiceBtn').addEventListener('click', () => {
-      Invoice.startNew(Quote.getState());
-      showView('view-invoice');
-    });
-    $('backToCalcBtn').addEventListener('click', () => showView('view-calc'));
+    $('backToCalcBtn').addEventListener('click', () => showView('view-quotes'));
   }
 
   /* ---------- Service worker ---------- */
@@ -82,7 +84,8 @@
     bind();
     Quote.init();
     Invoice.init();
-    Accounting.init();
+    Quotes.init();
+    Finance.init();
     applySettings();
     registerSW();
   }

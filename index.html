@@ -125,6 +125,33 @@
         <div id="materialsGroups"><!-- filled by JS --></div>
       </div>
 
+      <!-- Customer details (saved with the quote) -->
+      <div class="card">
+        <h2 class="card__title" data-i18n="client_data">Datos del cliente</h2>
+        <label class="field">
+          <span data-i18n="quote_title">Título del trabajo</span>
+          <input type="text" id="q_title" placeholder="..." />
+        </label>
+        <div class="grid2">
+          <label class="field">
+            <span data-i18n="customer_name">Cliente</span>
+            <input type="text" id="q_name" placeholder="Nombre" />
+          </label>
+          <label class="field">
+            <span data-i18n="customer_phone">Teléfono</span>
+            <input type="tel" id="q_phone" placeholder="000-000-0000" />
+          </label>
+        </div>
+        <label class="field">
+          <span data-i18n="customer_address">Dirección</span>
+          <input type="text" id="q_address" placeholder="..." />
+        </label>
+        <label class="field">
+          <span data-i18n="customer_email">Email</span>
+          <input type="email" id="q_email" placeholder="..." />
+        </label>
+      </div>
+
       <!-- Totals -->
       <div class="card card--totals">
         <h2 class="card__title" data-i18n="totals_title">Totales</h2>
@@ -142,8 +169,17 @@
         </div>
         <div class="totals__actions">
           <button class="btn btn--ghost" id="resetQuoteBtn" data-i18n="reset">Limpiar</button>
-          <button class="btn btn--primary" id="toInvoiceBtn" data-i18n="make_invoice">Crear Invoice</button>
+          <button class="btn btn--primary" id="saveQuoteBtn" data-i18n="save_quote">Guardar cotización</button>
         </div>
+      </div>
+    </section>
+
+    <!-- ---------- QUOTES VIEW ---------- -->
+    <section class="view" id="view-quotes">
+      <div class="card">
+        <h2 class="card__title" data-i18n="quotes_title">Cotizaciones</h2>
+        <p class="card__hint" data-i18n="quotes_hint">Cotizaciones guardadas. Edítalas, factura o confirma el trabajo.</p>
+        <div id="quotesList"></div>
       </div>
     </section>
 
@@ -152,7 +188,6 @@
       <div class="card invoice-form">
         <div class="invoice-form__head">
           <h2 class="card__title" data-i18n="invoice_data">Datos del Invoice</h2>
-          <button class="btn btn--ghost btn--sm" id="newInvoiceBtn" data-i18n="new_invoice">Nuevo</button>
         </div>
         <div class="grid2">
           <label class="field">
@@ -202,58 +237,28 @@
       </div>
     </section>
 
-    <!-- ---------- ACCOUNTING VIEW ---------- -->
-    <section class="view" id="view-accounting">
+    <!-- ---------- FINANCE VIEW ---------- -->
+    <section class="view" id="view-finance">
+      <div class="card">
+        <h2 class="card__title" data-i18n="finance_title">Finanzas</h2>
+        <p class="card__hint" data-i18n="finance_hint">Trabajos confirmados, anticipos y balance por mes.</p>
+        <div id="monthlyBalance"></div>
+      </div>
+
+      <div class="card">
+        <h2 class="card__title" id="g_title" data-i18n="grand_total">Total general</h2>
+        <div class="totalrow"><span data-i18n="collected">Cobrado</span><strong id="g_collected">$0.00</strong></div>
+        <div class="totalrow"><span data-i18n="to_collect">Por cobrar</span><strong id="g_pending">$0.00</strong></div>
+        <div class="totalrow"><span data-i18n="total_costs">Total costos</span><strong id="g_costs">$0.00</strong></div>
+        <div class="totalrow totalrow--profit"><span data-i18n="net_profit">Ganancia limpia</span><strong id="g_net">$0.00</strong></div>
+      </div>
+
       <div class="card">
         <div class="invoice-form__head">
-          <h2 class="card__title" data-i18n="accounting_title">Contabilidad</h2>
-          <button class="btn btn--ghost btn--sm" id="newJobBtn" data-i18n="new_job">Nuevo</button>
+          <h2 class="card__title" data-i18n="saved_jobs">Trabajos guardados</h2>
+          <select id="monthFilter" class="month-filter" aria-label="Mes"></select>
         </div>
-        <p class="card__hint" data-i18n="accounting_hint">Cuánto ganas limpio en cada trabajo.</p>
-
-        <div class="grid2">
-          <label class="field">
-            <span data-i18n="job_title">Trabajo / Cliente</span>
-            <input type="text" id="job_title" placeholder="..." />
-          </label>
-          <label class="field">
-            <span data-i18n="job_date">Fecha</span>
-            <input type="date" id="job_date" />
-          </label>
-        </div>
-
-        <h3 class="card__subtitle" data-i18n="income">Ingresos (recibido)</h3>
-        <div id="incomeList"></div>
-        <button class="btn btn--ghost btn--sm btn--block" id="addIncomeBtn" data-i18n="add_income">+ Agregar ingreso</button>
-
-        <h3 class="card__subtitle" data-i18n="costs">Costos</h3>
-        <div id="costsList"></div>
-        <div class="acc-actions">
-          <button class="btn btn--ghost btn--sm" id="addCostBtn" data-i18n="add_cost">+ Agregar costo</button>
-          <button class="btn btn--ghost btn--sm" id="importCalcBtn" data-i18n="import_calc">⬇ Importar del cálculo</button>
-        </div>
-
-        <div class="totalrow"><span data-i18n="total_income">Total recibido</span><strong id="acc_income">$0.00</strong></div>
-        <div class="totalrow"><span data-i18n="total_costs">Total costos</span><strong id="acc_costs">$0.00</strong></div>
-        <div class="totalrow totalrow--profit"><span data-i18n="net_profit">Ganancia limpia</span><strong id="acc_net">$0.00</strong></div>
-
-        <div class="totals__actions">
-          <button class="btn btn--primary btn--block" id="saveJobBtn" data-i18n="save_job">Guardar trabajo</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2 class="card__title" data-i18n="saved_jobs">Trabajos guardados</h2>
-        <div id="jobsList"></div>
-      </div>
-    </section>
-
-    <!-- ---------- HISTORY VIEW ---------- -->
-    <section class="view" id="view-history">
-      <div class="card">
-        <h2 class="card__title" data-i18n="history_title">Historial</h2>
-        <p class="card__hint" data-i18n="history_hint">Cotizaciones e invoices guardados en este dispositivo.</p>
-        <div id="historyList"></div>
+        <div id="financeList"></div>
       </div>
     </section>
   </main>
@@ -264,17 +269,13 @@
       <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm0 4v3h10V6H7zm0 5v2h2v-2H7zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2zM7 15v2h2v-2H7zm4 0v2h2v-2h-2zm4 0v5h2v-5h-2z"/></svg>
       <span data-i18n="nav_calc">Cálculo</span>
     </button>
-    <button class="bottomnav__btn" data-view="view-invoice">
+    <button class="bottomnav__btn" data-view="view-quotes">
       <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 1.5V8h4.5L14 3.5zM8 12h8v2H8v-2zm0 4h8v2H8v-2zm0-8h4v2H8V8z"/></svg>
-      <span data-i18n="nav_invoice">Invoice</span>
+      <span data-i18n="nav_quotes">Cotizaciones</span>
     </button>
-    <button class="bottomnav__btn" data-view="view-accounting">
+    <button class="bottomnav__btn" data-view="view-finance">
       <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M5 3h14a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm2 3v3h10V6H7zm0 5v2h3v-2H7zm5 0v2h3v-2h-3zM7 15v2h3v-2H7zm5 0v4h3v-4h-3z"/></svg>
-      <span data-i18n="nav_accounting">Cuentas</span>
-    </button>
-    <button class="bottomnav__btn" data-view="view-history">
-      <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M13 3a9 9 0 1 0 8.94 10H19.9A7 7 0 1 1 13 5c1.93 0 3.68.78 4.95 2.05L15 10h7V3l-2.6 2.6A8.97 8.97 0 0 0 13 3zm-1 4v6l5 3 .75-1.23L13.5 12V7H12z"/></svg>
-      <span data-i18n="nav_history">Historial</span>
+      <span data-i18n="nav_finance">Finanzas</span>
     </button>
   </nav>
 
@@ -344,6 +345,54 @@
     </div>
   </div>
 
+  <!-- ===================== JOB EDIT DIALOG (finance) ===================== -->
+  <div class="dialog" id="jobEditModal" hidden>
+    <div class="dialog__backdrop" data-close-job></div>
+    <div class="dialog__panel dialog__panel--tall" role="dialog" aria-modal="true">
+      <div class="invoice-form__head">
+        <h2 data-i18n="edit_job">Editar trabajo</h2>
+        <button class="iconbtn" data-close-job aria-label="Close">✕</button>
+      </div>
+
+      <label class="field">
+        <span data-i18n="quote_title">Título del trabajo</span>
+        <input type="text" id="j_title" placeholder="..." />
+      </label>
+      <div class="grid2">
+        <label class="field">
+          <span data-i18n="job_date">Fecha</span>
+          <input type="date" id="j_date" />
+        </label>
+        <label class="field">
+          <span data-i18n="job_size">Tamaño</span>
+          <input type="number" inputmode="decimal" id="j_size" min="0" step="0.01" placeholder="Sq.Ft." />
+        </label>
+      </div>
+      <label class="field">
+        <span data-i18n="total_charge">Total a cobrar ($)</span>
+        <input type="number" inputmode="decimal" id="j_total" min="0" step="0.01" placeholder="0.00" />
+      </label>
+
+      <h3 class="card__subtitle" data-i18n="costs">Costos</h3>
+      <div id="jobCostsList"></div>
+      <button class="btn btn--ghost btn--sm btn--block" id="jobAddCostBtn" data-i18n="add_cost">+ Agregar costo</button>
+
+      <label class="field">
+        <span data-i18n="paid_label">Pagado / Anticipo ($)</span>
+        <input type="number" inputmode="decimal" id="j_paid" min="0" step="0.01" placeholder="0.00" />
+      </label>
+
+      <div class="totalrow"><span data-i18n="total_costs">Total costos</span><strong id="j_costs_total">$0.00</strong></div>
+      <div class="totalrow"><span data-i18n="balance_pending">Saldo por cobrar</span><strong id="j_balance">$0.00</strong></div>
+      <div class="totalrow totalrow--profit"><span data-i18n="net_profit">Ganancia limpia</span><strong id="j_net">$0.00</strong></div>
+
+      <div class="totals__actions">
+        <button class="btn btn--danger" id="jobDeleteBtn" data-i18n="delete">Eliminar</button>
+        <button class="btn btn--primary" id="jobSaveBtn" data-i18n="save_changes">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===================== TOAST ===================== -->
   <div class="toast" id="toast" hidden></div>
 
@@ -356,7 +405,8 @@
   <script src="js/calc.js" defer></script>
   <script src="js/materials.js" defer></script>
   <script src="js/invoice.js" defer></script>
-  <script src="js/accounting.js" defer></script>
+  <script src="js/quotes.js" defer></script>
+  <script src="js/finance.js" defer></script>
   <script src="js/app.js" defer></script>
 </body>
 </html>

@@ -4,6 +4,7 @@
 
   // Live quantity/price state keyed by material id
   const state = {}; // id -> { qty, price }
+  let currentQuoteId = null; // id of the quote being edited (null = new)
 
   function initState() {
     AppData.MATERIAL_GROUPS.forEach((g) => {
@@ -154,12 +155,83 @@
   }
 
   function reset() {
-    ['c_length','c_width','c_depth','f_length','f_width','f_depth','area_sqft'].forEach((id) => { $(id).value = ''; });
+    ['c_length','c_width','c_depth','f_length','f_width','f_depth','area_sqft',
+     'q_title','q_name','q_phone','q_address','q_email'].forEach((id) => { const el = $(id); if (el) el.value = ''; });
     $('area_sqft').dataset.touched = '';
     Object.keys(state).forEach((id) => { state[id].qty = 0; });
+    currentQuoteId = null;
     renderMaterials();
     recompute();
   }
+
+  /* ---------- Quote persistence (Cotizaciones) ---------- */
+  function saveQuote() {
+    const calc = getState();
+    if (!calc.area && !calc.materialsTotal && !calc.sqftTotal) {
+      App.toast(I18n.t('need_calc'));
+      return null;
+    }
+    const existing = currentQuoteId ? Storage.getQuote(currentQuoteId) : null;
+    const rec = {
+      id: currentQuoteId || 'q_' + makeId(),
+      title: $('q_title').value,
+      date: existing ? existing.date : todayISO(),
+      customer: {
+        name: $('q_name').value, phone: $('q_phone').value,
+        address: $('q_address').value, email: $('q_email').value
+      },
+      calc,
+      status: existing ? existing.status : 'pendiente',
+      invoiceId: existing ? existing.invoiceId : null,
+      jobId: existing ? existing.jobId : null,
+      savedAt: todayISO()
+    };
+    Storage.saveQuote(rec);
+    currentQuoteId = rec.id;
+    if (global.Quotes) Quotes.renderList();
+    if (global.Finance) Finance.render();
+    App.toast(I18n.t('quote_saved'));
+    App.showView('view-quotes');
+    return rec;
+  }
+
+  // Reload a saved quote back into the calculator for editing.
+  function loadQuote(rec) {
+    currentQuoteId = rec.id;
+    const c = rec.calc || {};
+    const con = c.concrete || {}, foo = c.footing || {};
+    $('c_length').value = con.length || '';
+    $('c_width').value = con.width || '';
+    $('c_depth').value = con.depth || '';
+    $('f_length').value = foo.length || '';
+    $('f_width').value = foo.width || '';
+    $('f_depth').value = foo.depth || '';
+    $('area_sqft').value = c.area != null ? c.area : '';
+    $('area_sqft').dataset.touched = c.area ? '1' : '';
+    if (c.pricePerSqft != null) $('price_sqft').value = c.pricePerSqft;
+
+    Object.keys(state).forEach((id) => { state[id].qty = 0; });
+    (c.materials || []).forEach((m) => {
+      if (!state[m.id]) state[m.id] = { qty: 0, price: m.price };
+      state[m.id].qty = Calc.num(m.qty);
+      state[m.id].price = Calc.num(m.price);
+    });
+
+    const cust = rec.customer || {};
+    $('q_title').value = rec.title || '';
+    $('q_name').value = cust.name || '';
+    $('q_phone').value = cust.phone || '';
+    $('q_address').value = cust.address || '';
+    $('q_email').value = cust.email || '';
+
+    renderMaterials();
+    recompute();
+    App.showView('view-calc');
+    window.scrollTo({ top: 0 });
+  }
+
+  function todayISO() { return new Date().toISOString().slice(0, 10); }
+  function makeId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 
   function init() {
     initState();
@@ -170,6 +242,7 @@
       .forEach((id) => $(id).addEventListener('input', recompute));
     $('area_sqft').addEventListener('input', (e) => { e.target.dataset.touched = '1'; recompute(); });
     $('resetQuoteBtn').addEventListener('click', reset);
+    $('saveQuoteBtn').addEventListener('click', saveQuote);
 
     // re-render labels on language change
     document.addEventListener('i18n:changed', () => {
@@ -189,5 +262,6 @@
     recompute();
   }
 
-  global.Quote = { init, getState, reset, recompute };
+  global.Quote = { init, getState, reset, recompute, saveQuote, loadQuote,
+                   getCurrentId: () => currentQuoteId };
 })(window);

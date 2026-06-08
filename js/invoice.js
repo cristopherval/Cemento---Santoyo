@@ -6,6 +6,7 @@
   const $ = (id) => document.getElementById(id);
   let currentRecord = null;       // record being previewed
   let lastQuote = null;           // snapshot from calculator (for history reference)
+  let linkedQuoteId = null;       // id of the quote this invoice belongs to
   let custPad = null;             // customer signature pad
   let ceoPad = null;              // CEO signature pad
   let signMode = 'digital';       // 'digital' = customer signs on screen | 'physical' = signs on paper
@@ -90,12 +91,50 @@
   // total & amount paid stay EMPTY by request; customer fields & signature reset; CEO kept.
   function startNew(quote) {
     lastQuote = quote || null;
+    linkedQuoteId = null;
     currentRecord = null;
     custPad = null;
     ['inv_name', 'inv_phone', 'inv_address', 'inv_email', 'inv_desc',
      'inv_total_input', 'inv_paid'].forEach((id) => { $(id).value = ''; });
     $('inv_date').value = todayISO();
     recompute();
+  }
+
+  /* ---------- Build an invoice from a saved quote ---------- */
+  // Prefills customer + TOTAL (= Sq.Ft. price, editable). If the quote already
+  // has an invoice, that invoice is reopened for preview/reprint instead.
+  function fromQuote(quote) {
+    linkedQuoteId = quote.id;
+    const existing = quote.invoiceId
+      ? Storage.getHistory().find((r) => r.id === quote.invoiceId) : null;
+    if (existing) { loadRecord(existing); return; }
+
+    currentRecord = null;
+    custPad = null;
+    lastQuote = quote.calc || null;
+    const cust = quote.customer || {};
+    $('inv_name').value = cust.name || '';
+    $('inv_phone').value = cust.phone || '';
+    $('inv_address').value = cust.address || '';
+    $('inv_email').value = cust.email || '';
+    $('inv_desc').value = quote.title || '';
+    $('inv_total_input').value = quote.calc && quote.calc.sqftTotal ? quote.calc.sqftTotal : '';
+    $('inv_paid').value = '';
+    $('inv_date').value = todayISO();
+    recompute();
+    App.showView('view-invoice');
+    window.scrollTo({ top: 0 });
+  }
+
+  // Link a saved invoice back to its quote and advance the quote status.
+  function linkInvoiceToQuote(rec) {
+    if (!linkedQuoteId) return;
+    const q = Storage.getQuote(linkedQuoteId);
+    if (!q) return;
+    q.invoiceId = rec.id;
+    if (q.status === 'pendiente') q.status = 'aceptada';
+    Storage.saveQuote(q);
+    if (global.Quotes) Quotes.renderList();
   }
 
   /* ---------- Build a record from the form ---------- */
@@ -117,6 +156,7 @@
       ceoSignature: currentRecord ? currentRecord.ceoSignature : Storage.getCeoSignature(),
       signMode: signMode,
       quote: lastQuote,
+      quoteId: linkedQuoteId,
       savedAt: todayISO()
     };
   }
@@ -199,6 +239,7 @@
     signMode = mode;
     currentRecord = buildRecord();
     Storage.saveRecord(currentRecord);
+    linkInvoiceToQuote(currentRecord);
     renderSheet(currentRecord, mode);
     App.openModal('invoiceModal');
     initPads(currentRecord, mode);
@@ -217,6 +258,7 @@
   function loadRecord(rec) {
     currentRecord = rec;
     lastQuote = rec.quote || null;
+    linkedQuoteId = rec.quoteId || linkedQuoteId;
     signMode = rec.signMode || 'digital';
     $('inv_name').value = rec.customer.name || '';
     $('inv_phone').value = rec.customer.phone || '';
@@ -281,6 +323,7 @@
   /* ---------- History ---------- */
   function renderHistory() {
     const wrap = $('historyList');
+    if (!wrap) return; // invoices are now reached from their quote
     const list = Storage.getHistory();
     if (!list.length) { wrap.innerHTML = `<p class="muted">${I18n.t('empty_history')}</p>`; return; }
     wrap.innerHTML = list.map((r) => `
@@ -352,5 +395,5 @@
     recompute();
   }
 
-  global.Invoice = { init, startNew, renderHistory };
+  global.Invoice = { init, startNew, fromQuote, renderHistory };
 })(window);
