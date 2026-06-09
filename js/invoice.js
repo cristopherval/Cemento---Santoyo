@@ -138,11 +138,11 @@
   }
 
   /* ---------- Build a record from the form ---------- */
-  function buildRecord() {
+  function buildRecord(number) {
     const t = recompute();
     return {
       id: currentRecord ? currentRecord.id : 'inv_' + makeId(),
-      number: currentRecord ? currentRecord.number : Storage.nextInvoiceNumber(),
+      number: currentRecord ? currentRecord.number : number,
       date: $('inv_date').value || todayISO(),
       customer: {
         name: $('inv_name').value, phone: $('inv_phone').value,
@@ -235,9 +235,11 @@
   /* ---------- Signature-choice dialog before showing the invoice ---------- */
   function requestPreview() { App.openModal('signChoiceModal'); }
 
-  function doPreview(mode) {
+  async function doPreview(mode) {
     signMode = mode;
-    currentRecord = buildRecord();
+    const number = currentRecord ? currentRecord.number
+      : (window.Cloud ? await Cloud.nextInvoiceNumber() : Storage.nextInvoiceNumber());
+    currentRecord = buildRecord(number);
     Storage.saveRecord(currentRecord);
     linkInvoiceToQuote(currentRecord);
     renderSheet(currentRecord, mode);

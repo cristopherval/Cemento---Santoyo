@@ -1,10 +1,12 @@
 /* Santoyo's Concrete Work — Service Worker (offline-first) */
-const CACHE = 'santoyo-v7';
+const CACHE = 'santoyo-v11';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './css/styles.css',
+  './assets/vendor/supabase.min.js',
+  './js/config.js',
   './js/i18n.js',
   './js/data.js',
   './js/storage.js',
@@ -13,6 +15,7 @@ const ASSETS = [
   './js/invoice.js',
   './js/quotes.js',
   './js/finance.js',
+  './js/cloud.js',
   './js/app.js',
   './assets/logo.png',
   './assets/vendor/html2canvas.min.js',
@@ -40,6 +43,10 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+  // Only handle same-origin app assets. Cross-origin requests (e.g. the Supabase
+  // REST/Auth API) must always hit the network — never cache them, or sync would
+  // serve stale data on every pull.
+  if (new URL(e.request.url).origin !== self.location.origin) return;
   e.respondWith(
     caches.match(e.request).then((cached) => {
       if (cached) return cached;

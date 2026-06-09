@@ -295,6 +295,14 @@
             <button data-theme="dark" class="is-active" data-i18n="theme_dark">Oscuro</button>
           </div>
         </div>
+        <div class="setting">
+          <span data-i18n="cloud_sync">Sincronización</span>
+          <span class="sync-status" id="syncStatus"></span>
+        </div>
+        <div class="setting" id="signedInRow" hidden>
+          <span><span data-i18n="signed_in_as">Sesión</span><br><small id="authUserEmail" class="muted"></small></span>
+          <button class="btn btn--ghost btn--sm" id="signOutBtn" data-i18n="sign_out">Cerrar sesión</button>
+        </div>
         <hr class="drawer__sep" />
         <p class="drawer__company">Santos Santoyo — CEO<br>281-622-3163<br>sales@santoyosconcrete.com</p>
         <button class="btn btn--ghost btn--sm" id="clearDataBtn" data-i18n="clear_data">Borrar historial</button>
@@ -386,12 +394,32 @@
     </div>
   </div>
 
+  <!-- ===================== AUTH GATE (login) ===================== -->
+  <div class="authgate" id="authGate" hidden>
+    <form class="authgate__card" id="authForm">
+      <img src="assets/logo.png" alt="Santoyo's Concrete Work" class="authgate__logo" />
+      <h2 data-i18n="login_title">Iniciar sesión</h2>
+      <label class="field">
+        <span data-i18n="email">Correo</span>
+        <input type="email" id="authEmail" autocomplete="username" required />
+      </label>
+      <label class="field">
+        <span data-i18n="password">Contraseña</span>
+        <input type="password" id="authPassword" autocomplete="current-password" required />
+      </label>
+      <p class="authgate__error" id="authError"></p>
+      <button type="submit" class="btn btn--primary btn--block" id="authSubmit" data-i18n="sign_in">Entrar</button>
+    </form>
+  </div>
+
   <!-- ===================== TOAST ===================== -->
   <div class="toast" id="toast" hidden></div>
 
   <!-- ===================== SCRIPTS ===================== -->
   <script src="assets/vendor/html2canvas.min.js" defer></script>
   <script src="assets/vendor/jspdf.umd.min.js" defer></script>
+  <script src="assets/vendor/supabase.min.js" defer></script>
+  <script src="js/config.js" defer></script>
   <script src="js/i18n.js" defer></script>
   <script src="js/data.js" defer></script>
   <script src="js/storage.js" defer></script>
@@ -400,6 +428,7 @@
   <script src="js/invoice.js" defer></script>
   <script src="js/quotes.js" defer></script>
   <script src="js/finance.js" defer></script>
+  <script src="js/cloud.js" defer></script>
   <script src="js/app.js" defer></script>
 </body>
 </html>

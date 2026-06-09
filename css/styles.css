@@ -399,6 +399,30 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; marg
 .dialog__panel--tall .invoice-form__head { margin-bottom: 14px; }
 .dialog__panel--tall .invoice-form__head h2 { margin: 0; font-size: 1.15rem; }
 
+/* ===================== AUTH GATE (login) ===================== */
+.authgate {
+  position: fixed; inset: 0; z-index: 200;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px; padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+.authgate[hidden] { display: none; }
+.authgate__card {
+  width: 100%; max-width: 360px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 28px 22px; box-shadow: var(--shadow);
+  display: flex; flex-direction: column; gap: 14px;
+}
+.authgate__logo { width: 84px; height: 84px; object-fit: contain; align-self: center; }
+.authgate__card h2 { text-align: center; margin: 0 0 4px; font-size: 1.3rem; }
+.authgate__error { color: var(--red); font-size: .85rem; min-height: 1em; margin: 0; text-align: center; }
+
+/* sync status pill in the settings drawer */
+.sync-status { font-size: .82rem; font-weight: 700; }
+.sync-status[data-state="ok"] { color: #15a05a; }
+.sync-status[data-state="busy"] { color: var(--text-dim); }
+.sync-status[data-state="offline"] { color: var(--red); }
+
 /* ===================== TOAST ===================== */
 .toast {
   position: fixed; left: 50%; bottom: calc(var(--nav-h) + 20px);

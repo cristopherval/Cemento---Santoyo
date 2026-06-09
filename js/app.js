@@ -79,6 +79,12 @@
     }
   }
 
+  function refreshAll() {
+    if (window.Quotes) Quotes.renderList();
+    if (window.Finance) Finance.render();
+    if (window.Invoice) Invoice.renderHistory();
+  }
+
   function init() {
     settings = Storage.getSettings();
     bind();
@@ -88,10 +94,11 @@
     Finance.init();
     applySettings();
     registerSW();
+    if (window.Cloud) Cloud.start();
   }
 
   global.App = {
-    init, showView, openModal, closeModal, toast,
+    init, showView, openModal, closeModal, toast, refreshAll,
     refreshHistory: () => Invoice.renderHistory()
   };
 

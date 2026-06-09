@@ -141,7 +141,19 @@
       confirm_del_job: '¿Eliminar este trabajo de Finanzas? No se puede deshacer.',
       sent_finance: 'Enviado a Finanzas',
       all_months: 'Todos los meses',
-      grand_total_all: 'Total general'
+      grand_total_all: 'Total general',
+      // --- login / sincronización ---
+      login_title: 'Iniciar sesión',
+      email: 'Correo',
+      password: 'Contraseña',
+      sign_in: 'Entrar',
+      sign_out: 'Cerrar sesión',
+      auth_error: 'Correo o contraseña incorrectos.',
+      cloud_sync: 'Sincronización',
+      signed_in_as: 'Sesión iniciada',
+      sync_ok: '✓ Sincronizado',
+      sync_busy: '↻ Sincronizando…',
+      sync_offline: '⚠ Sin conexión'
     },
     en: {
       concrete_title: 'Concrete (Cubic Yards)',
@@ -283,7 +295,19 @@
       confirm_del_job: 'Delete this job from Finance? This cannot be undone.',
       sent_finance: 'Sent to Finance',
       all_months: 'All months',
-      grand_total_all: 'Grand total'
+      grand_total_all: 'Grand total',
+      // --- login / sync ---
+      login_title: 'Sign in',
+      email: 'Email',
+      password: 'Password',
+      sign_in: 'Sign in',
+      sign_out: 'Sign out',
+      auth_error: 'Wrong email or password.',
+      cloud_sync: 'Sync',
+      signed_in_as: 'Signed in',
+      sync_ok: '✓ Synced',
+      sync_busy: '↻ Syncing…',
+      sync_offline: '⚠ Offline'
     }
   };
 
