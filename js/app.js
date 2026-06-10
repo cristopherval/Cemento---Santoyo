@@ -68,6 +68,21 @@
     });
 
     $('backToCalcBtn').addEventListener('click', () => showView('view-quotes'));
+
+    bindKeyboardNav();
+  }
+
+  /* Hide the bottom nav while the soft keyboard is open (a text field is focused),
+     so it doesn't float to the middle of the screen on mobile. */
+  function bindKeyboardNav() {
+    const nav = document.querySelector('.bottomnav');
+    if (!nav) return;
+    const isField = (el) => el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)
+      && el.type !== 'button' && el.type !== 'submit' && el.type !== 'checkbox' && el.type !== 'radio';
+    document.addEventListener('focusin', (e) => { if (isField(e.target)) nav.classList.add('bottomnav--hidden'); });
+    document.addEventListener('focusout', () => {
+      setTimeout(() => { if (!isField(document.activeElement)) nav.classList.remove('bottomnav--hidden'); }, 120);
+    });
   }
 
   /* ---------- Service worker ---------- */

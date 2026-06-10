@@ -281,7 +281,18 @@
   /* ---------- Export ---------- */
   async function renderCanvas() {
     const node = $('invoiceSheet').querySelector('.isheet');
-    return html2canvas(node, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+    // Force the full desktop width so the export keeps letter proportions even on
+    // mobile (where the on-screen sheet reflows narrow). Signatures are fixed-size
+    // (240px) so they aren't affected. Restored right after capture.
+    const prevW = node.style.width, prevMax = node.style.maxWidth;
+    node.style.width = '660px';
+    node.style.maxWidth = 'none';
+    try {
+      return await html2canvas(node, { scale: 2, backgroundColor: '#ffffff', useCORS: true, windowWidth: 1024 });
+    } finally {
+      node.style.width = prevW;
+      node.style.maxWidth = prevMax;
+    }
   }
 
   // Image → save (download) to the device
