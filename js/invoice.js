@@ -295,19 +295,32 @@
     }
   }
 
-  // Image → save (download) to the device
+  // Open the native share sheet for a file (on mobile it offers Print, WhatsApp,
+  // Save, etc.). If the Web Share API can't share files (desktop), open it in a
+  // new tab so the user can print/save manually — we never auto-download.
+  async function shareFile(blob, name, type) {
+    const file = new File([blob], name, { type });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: name });
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+
+  // Image → share
   async function doImage() {
     persistSignature();
     App.toast(I18n.t('generating'));
     try {
       const canvas = await renderCanvas();
       const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
-      downloadBlob(blob, `invoice-${currentRecord.number}.png`);
-      App.toast(I18n.t('image_saved'));
-    } catch (e) { App.toast('Error: ' + e.message); }
+      await shareFile(blob, `invoice-${currentRecord.number}.png`, 'image/png');
+    } catch (e) { if (e && e.name === 'AbortError') return; App.toast('Error: ' + e.message); }
   }
 
-  // Unified Print / PDF → clean PDF, shared (mobile offers Print/Save) or downloaded
+  // PDF → share (the share sheet includes Print / AirPrint / Save to Files)
   async function doPdf() {
     persistSignature();
     App.toast(I18n.t('generating'));
@@ -322,15 +335,9 @@
       const w = canvas.width * ratio;
       const h = canvas.height * ratio;
       pdf.addImage(img, 'PNG', (pw - w) / 2, 20, w, h);
-      const name = `invoice-${currentRecord.number}.pdf`;
       const blob = pdf.output('blob');
-      const file = new File([blob], name, { type: 'application/pdf' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try { await navigator.share({ files: [file], title: name }); return; } catch (_) {}
-      }
-      pdf.save(name);
-      App.toast(I18n.t('pdf_saved'));
-    } catch (e) { App.toast('Error: ' + e.message); }
+      await shareFile(blob, `invoice-${currentRecord.number}.pdf`, 'application/pdf');
+    } catch (e) { if (e && e.name === 'AbortError') return; App.toast('Error: ' + e.message); }
   }
 
   /* ---------- History ---------- */
