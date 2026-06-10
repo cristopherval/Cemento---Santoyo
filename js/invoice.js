@@ -280,7 +280,6 @@
   }
 
   /* ---------- Export (share-only, pre-generated in the background) ---------- */
-  let cachedImgBlob = null;     // ready-to-share PNG of the current invoice
   let cachedPdfBlob = null;     // ready-to-share PDF
   let exportsDirty = true;      // signatures changed → cache needs rebuilding
   let buildPromise = null;      // in-flight build (so taps await it)
@@ -321,13 +320,12 @@
     }
   }
 
-  // Build both the PNG and the PDF once (single html2canvas) and cache them.
+  // Build the PDF once (single html2canvas) and cache it.
   function buildExports() {
     if (buildPromise) return buildPromise;
     buildPromise = (async () => {
       const canvas = await renderCanvas();
       if (!canvas) return;
-      cachedImgBlob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
       const imgData = canvas.toDataURL('image/png');
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF({ unit: 'pt', format: 'letter' });
@@ -362,15 +360,7 @@
   }
 
   async function ensureExports() {
-    if (exportsDirty || !cachedImgBlob || !cachedPdfBlob) await buildExports();
-  }
-
-  async function doImage() {
-    persistSignature();
-    try {
-      await ensureExports();
-      await shareBlob(cachedImgBlob, `invoice-${currentRecord.number}.png`, 'image/png');
-    } catch (e) { App.toast('Error: ' + e.message); }
+    if (exportsDirty || !cachedPdfBlob) await buildExports();
   }
 
   async function doPdf() {
@@ -434,7 +424,6 @@
     $('inv_total_input').addEventListener('input', recompute);
     $('inv_paid').addEventListener('input', recompute);
     $('previewInvoiceBtn').addEventListener('click', requestPreview);
-    $('imageInvoiceBtn').addEventListener('click', doImage);
     $('pdfInvoiceBtn').addEventListener('click', doPdf);
 
     const newBtn = $('newInvoiceBtn');

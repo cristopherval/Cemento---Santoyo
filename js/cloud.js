@@ -159,10 +159,8 @@
     const err = $('authError'); if (err) err.textContent = '';
     const btn = $('authSubmit'); if (btn) btn.disabled = true;
     try {
-      console.log('[Cloud] signing in…', (email || '').trim());
       const { data, error } = await client.auth.signInWithPassword({ email: (email || '').trim(), password: password || '' });
       if (error) throw error;
-      console.log('[Cloud] sign in OK');
       user = (data && data.user) || user;
       hideGate();
       afterLogin();          // drive success directly; don't rely only on the auth event
@@ -221,7 +219,6 @@
     const form = $('authForm');
     if (form) form.addEventListener('submit', (e) => {
       e.preventDefault();
-      console.log('[Cloud] login form submitted');
       signIn($('authEmail').value, $('authPassword').value);
     });
     const out = $('signOutBtn');
@@ -247,7 +244,6 @@
     if (!global.supabase || !global.supabase.createClient) { enabled = false; hideGate(); return; }
     enabled = true;
     client = global.supabase.createClient(c.SUPABASE_URL, c.SUPABASE_ANON_KEY);
-    console.log('[Cloud] started, url:', c.SUPABASE_URL);
     bindUI();
     // SIGNED_IN is handled directly in signIn(). Here we only restore an existing
     // session on load and react to sign-out. Deferred with setTimeout to avoid the
