@@ -12,7 +12,7 @@
   let signMode = 'digital';       // 'digital' = customer signs on screen | 'physical' = signs on paper
 
   /* ---------- Signature pad factory (finger / mouse) ---------- */
-  function makeSignaturePad(canvasId, restoreDataUrl) {
+  function makeSignaturePad(canvasId, restoreDataUrl, onChange) {
     const canvas = $(canvasId);
     if (!canvas) return null;
     const ctx = canvas.getContext('2d');
@@ -38,14 +38,14 @@
       ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke();
       last = p; dirty = true;
     }
-    function end() { drawing = false; }
+    function end() { if (drawing) { drawing = false; if (onChange) onChange(); } }
 
     canvas.addEventListener('pointerdown', start);
     canvas.addEventListener('pointermove', move);
     window.addEventListener('pointerup', end);
 
     const pad = {
-      clear() { ctx.clearRect(0, 0, canvas.width, canvas.height); dirty = false; },
+      clear() { ctx.clearRect(0, 0, canvas.width, canvas.height); dirty = false; if (onChange) onChange(); },
       isEmpty() { return !dirty; },
       toDataURL() { return dirty ? canvas.toDataURL('image/png') : ''; },
       restore(url) {
@@ -61,8 +61,9 @@
 
   // build the pads after the modal is visible (so canvas has measurable size)
   function initPads(rec, mode) {
-    custPad = mode === 'digital' ? makeSignaturePad('custSigCanvas', rec.customerSignature) : null;
-    ceoPad = makeSignaturePad('ceoSigCanvas', rec.ceoSignature || Storage.getCeoSignature());
+    custPad = mode === 'digital' ? makeSignaturePad('custSigCanvas', rec.customerSignature, scheduleBuild) : null;
+    ceoPad = makeSignaturePad('ceoSigCanvas', rec.ceoSignature || Storage.getCeoSignature(), scheduleBuild);
+    scheduleBuild(); // warm the export cache as soon as the invoice is shown
   }
 
   // save signatures into the record; remember the CEO one globally for next time
@@ -278,73 +279,106 @@
     configureSigbar(signMode);
   }
 
-  /* ---------- Export ---------- */
+  /* ---------- Export (share-only, pre-generated in the background) ---------- */
+  let cachedImgBlob = null;     // ready-to-share PNG of the current invoice
+  let cachedPdfBlob = null;     // ready-to-share PDF
+  let exportsDirty = true;      // signatures changed → cache needs rebuilding
+  let buildPromise = null;      // in-flight build (so taps await it)
+  let buildTimer = null;
+
+  // Render the invoice off-screen at full letter width (660px) so the export keeps
+  // the right proportions on mobile and the on-screen sheet never flickers.
   async function renderCanvas() {
-    const node = $('invoiceSheet').querySelector('.isheet');
-    // Force the full desktop width so the export keeps letter proportions even on
-    // mobile (where the on-screen sheet reflows narrow). Signatures are fixed-size
-    // (240px) so they aren't affected. Restored right after capture.
-    const prevW = node.style.width, prevMax = node.style.maxWidth;
-    node.style.width = '660px';
-    node.style.maxWidth = 'none';
-    try {
-      return await html2canvas(node, { scale: 2, backgroundColor: '#ffffff', useCORS: true, windowWidth: 1024 });
-    } finally {
-      node.style.width = prevW;
-      node.style.maxWidth = prevMax;
-    }
-  }
-
-  // Open the native share sheet for a file (on mobile it offers Print, WhatsApp,
-  // Save, etc.). If the Web Share API can't share files (desktop), open it in a
-  // new tab so the user can print/save manually — we never auto-download.
-  async function shareFile(blob, name, type) {
-    const file = new File([blob], name, { type });
-    if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+    const live = $('invoiceSheet').querySelector('.isheet');
+    if (!live) return null;
+    const holder = document.createElement('div');
+    holder.style.cssText = 'position:fixed;left:-10000px;top:0;width:660px;background:#fff;z-index:-1;';
+    const clone = live.cloneNode(true);
+    clone.style.width = '660px';
+    clone.style.maxWidth = 'none';
+    // cloneNode doesn't copy canvas pixels — swap each live signature canvas for an
+    // <img> of its drawing so html2canvas captures the signatures.
+    const liveC = live.querySelectorAll('canvas');
+    const cloneC = clone.querySelectorAll('canvas');
+    liveC.forEach((lc, i) => {
+      const cc = cloneC[i];
+      if (!cc || !cc.parentNode) return;
       try {
-        await navigator.share({ files: [file], title: name });
-        return;
-      } catch (e) {
-        if (e && e.name === 'AbortError') return; // user closed the share sheet
-        // any other error: fall through to the open-in-tab fallback
-      }
+        const img = new Image();
+        img.src = lc.toDataURL('image/png');
+        img.width = lc.clientWidth || 240;
+        img.height = lc.clientHeight || 66;
+        img.className = lc.className;
+        cc.parentNode.replaceChild(img, cc);
+      } catch (e) {}
+    });
+    holder.appendChild(clone);
+    document.body.appendChild(holder);
+    try {
+      return await html2canvas(clone, { scale: 2, backgroundColor: '#ffffff', useCORS: true, windowWidth: 1024 });
+    } finally {
+      holder.remove();
     }
-    // Web Share with files isn't available here (needs HTTPS / a supported browser)
-    App.toast(I18n.t('share_unsupported'));
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
   }
 
-  // Image → share
-  async function doImage() {
-    persistSignature();
-    App.toast(I18n.t('generating'));
-    try {
+  // Build both the PNG and the PDF once (single html2canvas) and cache them.
+  function buildExports() {
+    if (buildPromise) return buildPromise;
+    buildPromise = (async () => {
       const canvas = await renderCanvas();
-      const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
-      await shareFile(blob, `invoice-${currentRecord.number}.png`, 'image/png');
-    } catch (e) { if (e && e.name === 'AbortError') return; App.toast('Error: ' + e.message); }
-  }
-
-  // PDF → share (the share sheet includes Print / AirPrint / Save to Files)
-  async function doPdf() {
-    persistSignature();
-    App.toast(I18n.t('generating'));
-    try {
-      const canvas = await renderCanvas();
-      const img = canvas.toDataURL('image/png');
+      if (!canvas) return;
+      cachedImgBlob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
+      const imgData = canvas.toDataURL('image/png');
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF({ unit: 'pt', format: 'letter' });
       const pw = pdf.internal.pageSize.getWidth();
       const ph = pdf.internal.pageSize.getHeight();
       const ratio = Math.min(pw / canvas.width, ph / canvas.height);
-      const w = canvas.width * ratio;
-      const h = canvas.height * ratio;
-      pdf.addImage(img, 'PNG', (pw - w) / 2, 20, w, h);
-      const blob = pdf.output('blob');
-      await shareFile(blob, `invoice-${currentRecord.number}.pdf`, 'application/pdf');
-    } catch (e) { if (e && e.name === 'AbortError') return; App.toast('Error: ' + e.message); }
+      pdf.addImage(imgData, 'PNG', (pw - canvas.width * ratio) / 2, 20, canvas.width * ratio, canvas.height * ratio);
+      cachedPdfBlob = pdf.output('blob');
+      exportsDirty = false;
+    })().finally(() => { buildPromise = null; });
+    return buildPromise;
+  }
+
+  // Warm the cache shortly after the invoice opens / after each signature stroke,
+  // so a button tap can share instantly (Android needs share() inside the gesture).
+  function scheduleBuild() {
+    exportsDirty = true;
+    clearTimeout(buildTimer);
+    buildTimer = setTimeout(() => { buildExports().catch(() => {}); }, 400);
+  }
+
+  // Share-only: open the native share sheet. No download, no new tab.
+  async function shareBlob(blob, name, type) {
+    if (!blob) { App.toast('Error'); return; }
+    const file = new File([blob], name, { type });
+    if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+      try { await navigator.share({ files: [file], title: name }); }
+      catch (e) { if (e && e.name !== 'AbortError') App.toast(I18n.t('share_unsupported')); }
+    } else {
+      App.toast(I18n.t('share_unsupported'));
+    }
+  }
+
+  async function ensureExports() {
+    if (exportsDirty || !cachedImgBlob || !cachedPdfBlob) await buildExports();
+  }
+
+  async function doImage() {
+    persistSignature();
+    try {
+      await ensureExports();
+      await shareBlob(cachedImgBlob, `invoice-${currentRecord.number}.png`, 'image/png');
+    } catch (e) { App.toast('Error: ' + e.message); }
+  }
+
+  async function doPdf() {
+    persistSignature();
+    try {
+      await ensureExports();
+      await shareBlob(cachedPdfBlob, `invoice-${currentRecord.number}.pdf`, 'application/pdf');
+    } catch (e) { App.toast('Error: ' + e.message); }
   }
 
   /* ---------- History ---------- */

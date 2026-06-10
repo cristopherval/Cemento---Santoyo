@@ -154,7 +154,7 @@
       sync_ok: '✓ Sincronizado',
       sync_busy: '↻ Sincronizando…',
       sync_offline: '⚠ Sin conexión',
-      share_unsupported: 'Compartir requiere HTTPS. Se abrió en otra pestaña.'
+      share_unsupported: 'No se pudo compartir aquí. Abre la app en HTTPS (sitio publicado).'
     },
     en: {
       concrete_title: 'Concrete (Cubic Yards)',
@@ -309,7 +309,7 @@
       sync_ok: '✓ Synced',
       sync_busy: '↻ Syncing…',
       sync_offline: '⚠ Offline',
-      share_unsupported: 'Sharing needs HTTPS. Opened in a new tab instead.'
+      share_unsupported: 'Could not share here. Open the app over HTTPS (published site).'
     }
   };
 
