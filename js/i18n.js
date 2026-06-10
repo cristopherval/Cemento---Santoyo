@@ -153,7 +153,8 @@
       signed_in_as: 'Sesión iniciada',
       sync_ok: '✓ Sincronizado',
       sync_busy: '↻ Sincronizando…',
-      sync_offline: '⚠ Sin conexión'
+      sync_offline: '⚠ Sin conexión',
+      share_unsupported: 'Compartir requiere HTTPS. Se abrió en otra pestaña.'
     },
     en: {
       concrete_title: 'Concrete (Cubic Yards)',
@@ -307,7 +308,8 @@
       signed_in_as: 'Signed in',
       sync_ok: '✓ Synced',
       sync_busy: '↻ Syncing…',
-      sync_offline: '⚠ Offline'
+      sync_offline: '⚠ Offline',
+      share_unsupported: 'Sharing needs HTTPS. Opened in a new tab instead.'
     }
   };
 

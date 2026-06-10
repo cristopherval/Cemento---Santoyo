@@ -300,10 +300,17 @@
   // new tab so the user can print/save manually — we never auto-download.
   async function shareFile(blob, name, type) {
     const file = new File([blob], name, { type });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file], title: name });
-      return;
+    if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+      try {
+        await navigator.share({ files: [file], title: name });
+        return;
+      } catch (e) {
+        if (e && e.name === 'AbortError') return; // user closed the share sheet
+        // any other error: fall through to the open-in-tab fallback
+      }
     }
+    // Web Share with files isn't available here (needs HTTPS / a supported browser)
+    App.toast(I18n.t('share_unsupported'));
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
     setTimeout(() => URL.revokeObjectURL(url), 60000);
