@@ -8,7 +8,6 @@
   let lastQuote = null;           // snapshot from calculator (for history reference)
   let linkedQuoteId = null;       // id of the quote this invoice belongs to
   let custPad = null;             // customer signature pad
-  let ceoPad = null;              // CEO signature pad
   let signMode = 'digital';       // 'digital' = customer signs on screen | 'physical' = signs on paper
 
   /* ---------- Signature pad factory (finger / mouse) ---------- */
@@ -22,21 +21,31 @@
     canvas.width = cssW * ratio;
     canvas.height = cssH * ratio;
     ctx.scale(ratio, ratio);
-    ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.strokeStyle = '#13203a';
-    let drawing = false, last = null, dirty = false;
+    ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#13203a'; ctx.fillStyle = '#13203a';
+    let drawing = false, last = null, mid = null, dirty = false;
 
     function pos(e) {
       const r = canvas.getBoundingClientRect();
       const t = e.touches ? e.touches[0] : e;
       return { x: t.clientX - r.left, y: t.clientY - r.top };
     }
-    function start(e) { e.preventDefault(); drawing = true; last = pos(e); }
+    function start(e) {
+      e.preventDefault(); drawing = true; last = pos(e); mid = last;
+      // small dot so a quick tap still leaves a mark
+      ctx.beginPath(); ctx.arc(last.x, last.y, ctx.lineWidth / 2, 0, Math.PI * 2); ctx.fill();
+      dirty = true;
+    }
+    // quadratic-curve smoothing between midpoints → clean, natural strokes
     function move(e) {
       if (!drawing) return; e.preventDefault();
       const p = pos(e);
-      ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke();
-      last = p; dirty = true;
+      const newMid = { x: (last.x + p.x) / 2, y: (last.y + p.y) / 2 };
+      ctx.beginPath();
+      ctx.moveTo(mid.x, mid.y);
+      ctx.quadraticCurveTo(last.x, last.y, newMid.x, newMid.y);
+      ctx.stroke();
+      last = p; mid = newMid; dirty = true;
     }
     function end() { if (drawing) { drawing = false; if (onChange) onChange(); } }
 
@@ -61,20 +70,15 @@
 
   // build the pads after the modal is visible (so canvas has measurable size)
   function initPads(rec, mode) {
+    // CEO signature is a fixed image (assets/firma.png); only the customer signs.
     custPad = mode === 'digital' ? makeSignaturePad('custSigCanvas', rec.customerSignature, scheduleBuild) : null;
-    ceoPad = makeSignaturePad('ceoSigCanvas', rec.ceoSignature || Storage.getCeoSignature(), scheduleBuild);
     scheduleBuild(); // warm the export cache as soon as the invoice is shown
   }
 
-  // save signatures into the record; remember the CEO one globally for next time
+  // save the customer signature into the record
   function persistSignature() {
     if (!currentRecord) return;
     if (custPad) currentRecord.customerSignature = custPad.toDataURL();
-    if (ceoPad) {
-      const ceo = ceoPad.toDataURL();
-      currentRecord.ceoSignature = ceo;
-      if (ceo) Storage.saveCeoSignature(ceo);
-    }
     Storage.saveRecord(currentRecord);
     App.refreshHistory();
   }
@@ -222,7 +226,7 @@
           </div>
           <div class="isheet__sign">
             <div class="sigspot">
-              <canvas id="ceoSigCanvas" class="isheet__sigpad"></canvas>
+              <img src="assets/firma.png" class="isheet__ceosign-img" alt="" />
             </div>
             <span class="line"></span>
             <small class="strong">${c.ceo}</small>
@@ -437,8 +441,6 @@
 
     const clearCust = $('clearCustBtn');
     if (clearCust) clearCust.addEventListener('click', () => { if (custPad) { custPad.clear(); persistSignature(); } });
-    const clearCeo = $('clearCeoBtn');
-    if (clearCeo) clearCeo.addEventListener('click', () => { if (ceoPad) { ceoPad.clear(); persistSignature(); } });
 
     document.addEventListener('i18n:changed', renderHistory);
     renderHistory();

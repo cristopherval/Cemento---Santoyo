@@ -281,8 +281,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; marg
 .modal__sigbar > span { opacity: .85; }
 .modal__sigbtns { display: inline-flex; gap: 6px; opacity: 1; }
 .modal__sigbtns .btn { padding: 6px 10px; font-size: .74rem; }
-/* the customer signature box is interactive in the preview */
-.isheet__sigpad { border: 1px dashed #9bb0cc; border-radius: 4px; }
+/* the customer signs over the signature line — no visible box, looks professional
+   on screen and in the exported PDF */
+.isheet__sigpad { border: none; background: transparent; }
 
 /* ===================== INVOICE SHEET (Office-style, matches original) ===================== */
 .invoice-sheet { display: flex; justify-content: center; }
