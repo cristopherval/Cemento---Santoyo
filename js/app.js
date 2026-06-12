@@ -1,5 +1,10 @@
 /* App — navigation, settings, theme, toasts. Wires the modules together. */
 (function (global) {
+  // Anti-clickjacking: never allow the app to run inside someone else's iframe.
+  try {
+    if (window.top !== window.self) { window.top.location = window.self.location; }
+  } catch (e) { document.documentElement.style.display = 'none'; }
+
   const $ = (id) => document.getElementById(id);
   let settings = { lang: 'es', theme: 'dark' };
   let toastTimer = null;

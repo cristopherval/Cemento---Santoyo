@@ -61,4 +61,6 @@ as $$
   select nextval('public.invoice_seq');
 $$;
 
+-- Solo usuarios autenticados pueden pedir número de invoice (no el rol anónimo)
+revoke execute on function public.next_invoice_number() from public, anon;
 grant execute on function public.next_invoice_number() to authenticated;

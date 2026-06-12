@@ -26,6 +26,9 @@
   let pulling = false;
   let booted = false;
   let flushTimer = null;
+  let idleTimer = null;
+  const IDLE_MS = 60 * 60 * 1000;   // auto sign-out after 60 min of inactivity
+  let idleBound = false;
 
   function cfg() { return global.SANTOYO_CONFIG || {}; }
   function ready() { return enabled && client && user; }
@@ -174,6 +177,7 @@
 
   async function signOut() {
     if (!client) return;
+    clearTimeout(idleTimer);
     await client.auth.signOut();
     // keep local data, but force a fresh seed/login next time
     LS.set(SEED_KEY, false);
@@ -181,10 +185,26 @@
 
   async function afterLogin() {
     showUserEmail();
+    startIdleWatch();
     seedIfFirstRun();
     await pullAll();
     if (!booted) { booted = true; startListeners(); }
     flushQueue();
+  }
+
+  /* ---------- idle auto sign-out ---------- */
+  function resetIdle() {
+    if (!ready()) return;
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => { if (ready()) signOut(); }, IDLE_MS);
+  }
+  function startIdleWatch() {
+    if (!idleBound) {
+      ['pointerdown', 'keydown', 'touchstart'].forEach((ev) =>
+        document.addEventListener(ev, resetIdle, { passive: true }));
+      idleBound = true;
+    }
+    resetIdle();
   }
 
   function showUserEmail() {
