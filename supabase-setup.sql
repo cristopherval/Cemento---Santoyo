@@ -64,3 +64,40 @@ $$;
 -- Solo usuarios autenticados pueden pedir número de invoice (no el rol anónimo)
 revoke execute on function public.next_invoice_number() from public, anon;
 grant execute on function public.next_invoice_number() to authenticated;
+
+-- ---------- Firma remota del cliente (token-gated, sin login) ----------
+-- El cliente recibe un enlace con ?sign=<id>&t=<token>. Estas dos funciones son
+-- lo único que el rol anónimo puede tocar, y solo sobre el invoice cuyo
+-- signToken coincide; no exponen el resto de la tabla.
+create or replace function public.get_invoice_for_signing(p_id text, p_token text)
+  returns jsonb
+  language sql
+  security definer
+  set search_path = public
+as $$
+  select data from public.invoices
+  where id = p_id and deleted = false and data->>'signToken' = p_token;
+$$;
+
+create or replace function public.submit_signature(p_id text, p_token text, p_sig text)
+  returns void
+  language plpgsql
+  security definer
+  set search_path = public
+as $$
+begin
+  update public.invoices
+     set data = data || jsonb_build_object(
+           'customerSignature', p_sig,
+           'signStatus', 'signed',
+           'signedAt',  to_char(now() at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+           'updatedAt', to_char(now() at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')),
+         updated_at = now()
+   where id = p_id and deleted = false and data->>'signToken' = p_token;
+end;
+$$;
+
+revoke execute on function public.get_invoice_for_signing(text, text) from public;
+revoke execute on function public.submit_signature(text, text, text) from public;
+grant  execute on function public.get_invoice_for_signing(text, text) to anon, authenticated;
+grant  execute on function public.submit_signature(text, text, text)  to anon, authenticated;

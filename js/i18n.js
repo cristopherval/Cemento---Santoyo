@@ -154,7 +154,21 @@
       sync_ok: '✓ Sincronizado',
       sync_busy: '↻ Sincronizando…',
       sync_offline: '⚠ Sin conexión',
-      share_unsupported: 'No se pudo compartir aquí. Abre la app en HTTPS (sitio publicado).'
+      share_unsupported: 'No se pudo compartir aquí. Abre la app en HTTPS (sitio publicado).',
+      // --- firma remota ---
+      send_to_sign: '📩 Enviar a firmar al cliente',
+      sign_link_msg: 'Hola, aquí está tu invoice #{n} de Santoyo\'s Concrete Work. Ábrelo y fírmalo aquí:',
+      sign_link_copied: 'Enlace copiado',
+      sign_need_online: 'Necesitas conexión a internet para enviar a firmar.',
+      sign_view_title: 'Firma tu invoice',
+      sign_submit: 'Firmar y enviar',
+      sign_thanks: '✓ ¡Gracias! Tu firma fue enviada.',
+      sign_invalid: 'Enlace inválido o vencido.',
+      sign_already: 'Este invoice ya fue firmado. ¡Gracias!',
+      sign_loading: 'Cargando invoice…',
+      sign_first: 'Por favor firma primero.',
+      status_pending_sign: 'Pendiente de firma',
+      status_signed: 'Firmado por el cliente'
     },
     en: {
       concrete_title: 'Concrete (Cubic Yards)',
@@ -309,7 +323,21 @@
       sync_ok: '✓ Synced',
       sync_busy: '↻ Syncing…',
       sync_offline: '⚠ Offline',
-      share_unsupported: 'Could not share here. Open the app over HTTPS (published site).'
+      share_unsupported: 'Could not share here. Open the app over HTTPS (published site).',
+      // --- remote signing ---
+      send_to_sign: '📩 Send to customer to sign',
+      sign_link_msg: 'Hi, here is your invoice #{n} from Santoyo\'s Concrete Work. Open and sign it here:',
+      sign_link_copied: 'Link copied',
+      sign_need_online: 'You need an internet connection to send for signing.',
+      sign_view_title: 'Sign your invoice',
+      sign_submit: 'Sign & send',
+      sign_thanks: '✓ Thank you! Your signature was sent.',
+      sign_invalid: 'Invalid or expired link.',
+      sign_already: 'This invoice was already signed. Thank you!',
+      sign_loading: 'Loading invoice…',
+      sign_first: 'Please sign first.',
+      status_pending_sign: 'Awaiting signature',
+      status_signed: 'Signed by customer'
     }
   };
 

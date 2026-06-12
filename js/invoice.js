@@ -103,6 +103,7 @@
      'inv_total_input', 'inv_paid'].forEach((id) => { $(id).value = ''; });
     $('inv_date').value = todayISO();
     recompute();
+    showSignStatus(null);
   }
 
   /* ---------- Build an invoice from a saved quote ---------- */
@@ -127,6 +128,7 @@
     $('inv_paid').value = '';
     $('inv_date').value = todayISO();
     recompute();
+    showSignStatus(null);
     App.showView('view-invoice');
     window.scrollTo({ top: 0 });
   }
@@ -167,15 +169,16 @@
   }
 
   /* ---------- Render the printable invoice sheet (English, matches original) ---------- */
-  function renderSheet(rec, mode) {
+  function renderSheet(rec, mode, targetId) {
     const c = AppData.COMPANY;
     const notes = AppData.INVOICE_NOTES.map((n) => `<li>${escapeHtml(n)}</li>`).join('');
     // customer signature: interactive canvas (digital) or blank line (physical / on paper)
-    const custSpot = mode === 'digital'
-      ? `<canvas id="custSigCanvas" class="isheet__sigpad"></canvas>`
-      : ``;
+    // or, if already signed, the saved signature image
+    const custSpot = rec.customerSignature
+      ? `<img src="${rec.customerSignature}" class="isheet__ceosign-img" alt="" />`
+      : (mode === 'digital' ? `<canvas id="custSigCanvas" class="isheet__sigpad"></canvas>` : ``);
 
-    $('invoiceSheet').innerHTML = `
+    $(targetId || 'invoiceSheet').innerHTML = `
       <div class="isheet">
         <img src="assets/logo.png" class="isheet__wm" alt="" />
 
@@ -281,6 +284,7 @@
     App.openModal('invoiceModal');
     initPads(rec, signMode);
     configureSigbar(signMode);
+    showSignStatus(rec);
   }
 
   /* ---------- Export (share-only, pre-generated in the background) ---------- */
@@ -375,6 +379,117 @@
     } catch (e) { App.toast('Error: ' + e.message); }
   }
 
+  /* ---------- Remote signing (contractor side) ---------- */
+  function showSignStatus(rec) {
+    const el = $('invSignStatus');
+    if (!el) return;
+    if (!rec || !rec.signStatus) { el.hidden = true; el.textContent = ''; return; }
+    el.hidden = false;
+    if (rec.signStatus === 'signed') {
+      el.textContent = '✓ ' + I18n.t('status_signed') + (rec.signedAt ? ' · ' + fmtDate(rec.signedAt.slice(0, 10)) : '');
+      el.dataset.state = 'signed';
+    } else {
+      el.textContent = '⏳ ' + I18n.t('status_pending_sign');
+      el.dataset.state = 'pending';
+    }
+  }
+
+  // Save the invoice (assign number, persist, link to quote) if not saved yet.
+  async function ensureSaved() {
+    if (currentRecord) return currentRecord;
+    signMode = 'digital';
+    const number = window.Cloud ? await Cloud.nextInvoiceNumber() : Storage.nextInvoiceNumber();
+    currentRecord = buildRecord(number);
+    Storage.saveRecord(currentRecord);
+    linkInvoiceToQuote(currentRecord);
+    App.refreshHistory();
+    return currentRecord;
+  }
+
+  async function sendForSignature() {
+    if (!window.Cloud || !Cloud.hasConfig() || !Cloud.isOnline()) { App.toast(I18n.t('sign_need_online')); return; }
+    await ensureSaved();
+    if (!currentRecord) return;
+
+    if (!currentRecord.signToken) {
+      currentRecord.signToken = (window.crypto && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : (Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2));
+    }
+    currentRecord.signStatus = 'pending';
+    Storage.saveRecord(currentRecord);   // stamps updatedAt + queues sync
+    showSignStatus(currentRecord);
+
+    App.toast(I18n.t('sync_busy'));
+    const ok = await Cloud.sendForSignature(currentRecord);
+    if (!ok) { App.toast(I18n.t('sign_need_online')); return; }
+
+    const link = location.origin + location.pathname + '?sign=' + encodeURIComponent(currentRecord.id)
+      + '&t=' + encodeURIComponent(currentRecord.signToken);
+    const msg = I18n.t('sign_link_msg').replace('{n}', currentRecord.number);
+    try {
+      if (navigator.share) { await navigator.share({ title: 'Invoice #' + currentRecord.number, text: msg, url: link }); return; }
+    } catch (e) { if (e && e.name === 'AbortError') return; }
+    // fallback: copy to clipboard
+    try { await navigator.clipboard.writeText(link); App.toast(I18n.t('sign_link_copied')); }
+    catch (e) { window.prompt(I18n.t('sign_link_copied'), link); }
+  }
+
+  /* ---------- Remote signing (guest / customer side) ---------- */
+  let guestCtx = null;
+  async function startGuestSigning(id, token) {
+    const view = $('signView');
+    if (view) view.hidden = false;
+    setGuestMsg(I18n.t('sign_loading'));
+    let rec;
+    try { rec = await Cloud.getInvoiceForSigning(id, token); }
+    catch (e) { setGuestMsg(I18n.t('sign_invalid')); return; }
+    if (!rec) { setGuestMsg(I18n.t('sign_invalid')); return; }
+
+    guestCtx = { id, token, rec };
+    renderSheet(rec, 'digital', 'signSheet');
+    setGuestMsg('');
+
+    const already = rec.signStatus === 'signed' || rec.customerSignature;
+    const bar = $('signBar');
+    if (already) {
+      if (bar) bar.hidden = true;
+      setGuestBanner(I18n.t('sign_already'));
+      return;
+    }
+    // create the signature pad on the freshly rendered canvas
+    guestCtx.pad = makeSignaturePad('custSigCanvas');
+    const clearBtn = $('signClearBtn');
+    if (clearBtn) clearBtn.onclick = () => { if (guestCtx.pad) guestCtx.pad.clear(); };
+    const submitBtn = $('signSubmitBtn');
+    if (submitBtn) submitBtn.onclick = guestSubmit;
+  }
+
+  async function guestSubmit() {
+    if (!guestCtx || !guestCtx.pad) return;
+    const sig = guestCtx.pad.toDataURL();
+    if (!sig) { App.toast(I18n.t('sign_first')); return; }
+    const submitBtn = $('signSubmitBtn');
+    if (submitBtn) submitBtn.disabled = true;
+    try {
+      await Cloud.submitSignature(guestCtx.id, guestCtx.token, sig);
+      const bar = $('signBar'); if (bar) bar.hidden = true;
+      setGuestBanner(I18n.t('sign_thanks'));
+    } catch (e) {
+      if (submitBtn) submitBtn.disabled = false;
+      App.toast('Error: ' + (e && e.message ? e.message : e));
+    }
+  }
+
+  function setGuestMsg(text) {
+    const el = $('signMsg');
+    if (el) { el.textContent = text || ''; el.hidden = !text; }
+  }
+  function setGuestBanner(text) {
+    const el = $('signBanner');
+    if (el) { el.textContent = text || ''; el.hidden = !text; }
+  }
+
   /* ---------- History ---------- */
   function renderHistory() {
     const wrap = $('historyList');
@@ -429,6 +544,8 @@
     $('inv_paid').addEventListener('input', recompute);
     $('previewInvoiceBtn').addEventListener('click', requestPreview);
     $('pdfInvoiceBtn').addEventListener('click', doPdf);
+    const sendSign = $('sendSignBtn');
+    if (sendSign) sendSign.addEventListener('click', sendForSignature);
 
     const newBtn = $('newInvoiceBtn');
     if (newBtn) newBtn.addEventListener('click', () => { startNew(null); App.toast(I18n.t('new_invoice')); });
@@ -447,5 +564,5 @@
     recompute();
   }
 
-  global.Invoice = { init, startNew, fromQuote, renderHistory };
+  global.Invoice = { init, startNew, fromQuote, renderHistory, startGuestSigning };
 })(window);

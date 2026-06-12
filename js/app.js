@@ -106,6 +106,19 @@
   }
 
   function init() {
+    // Guest signing mode: a customer opened a ?sign=<id>&t=<token> link.
+    // Show only the signing screen — no login, no app, no sync.
+    const params = new URLSearchParams(location.search);
+    const signId = params.get('sign');
+    const signToken = params.get('t');
+    if (signId && signToken && window.Cloud && Cloud.hasConfig()) {
+      settings = Storage.getSettings();
+      applySettings();
+      Cloud.initGuest();
+      Invoice.startGuestSigning(signId, signToken);
+      return;
+    }
+
     settings = Storage.getSettings();
     bind();
     Quote.init();

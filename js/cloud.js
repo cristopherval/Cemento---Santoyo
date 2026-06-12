@@ -257,6 +257,40 @@
     return Storage.nextInvoiceNumber();
   }
 
+  /* ---------------- remote signing ---------------- */
+  function hasConfig() {
+    const c = cfg();
+    return !!(c.SUPABASE_URL && c.SUPABASE_ANON_KEY && global.supabase && global.supabase.createClient);
+  }
+  // create the client only (no auth gate / listeners) — used by guest signing
+  function initGuest() {
+    if (!hasConfig()) return false;
+    const c = cfg();
+    enabled = true;
+    client = global.supabase.createClient(c.SUPABASE_URL, c.SUPABASE_ANON_KEY);
+    return true;
+  }
+  async function getInvoiceForSigning(id, token) {
+    if (!client) return null;
+    const { data, error } = await client.rpc('get_invoice_for_signing', { p_id: id, p_token: token });
+    if (error) throw error;
+    return data || null;   // jsonb record or null
+  }
+  async function submitSignature(id, token, sig) {
+    if (!client) throw new Error('offline');
+    const { error } = await client.rpc('submit_signature', { p_id: id, p_token: token, p_sig: sig });
+    if (error) throw error;
+    return true;
+  }
+  // Push one invoice to Supabase right now (so a signing link works immediately).
+  async function sendForSignature(rec) {
+    if (!ready() || !navigator.onLine) return false;
+    const payload = { id: rec.id, data: rec, deleted: false, updated_at: rec.updatedAt || nowISO() };
+    const { error } = await client.from('invoices').upsert(payload);
+    if (error) return false;
+    return true;
+  }
+
   /* ---------------- boot ---------------- */
   function start() {
     const c = cfg();
@@ -282,5 +316,6 @@
   }
 
   global.Cloud = { start, signIn, signOut, onLocalChange, pullAll, flushQueue, nextInvoiceNumber,
+                   hasConfig, initGuest, getInvoiceForSigning, submitSignature, sendForSignature,
                    isEnabled: () => enabled, isOnline: () => ready() && navigator.onLine };
 })(window);
