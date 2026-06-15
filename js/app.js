@@ -102,7 +102,7 @@
   function refreshAll() {
     if (window.Quotes) Quotes.renderList();
     if (window.Finance) Finance.render();
-    if (window.Invoice) Invoice.renderHistory();
+    if (window.Invoice) { Invoice.renderHistory(); Invoice.refreshOpen(); }
   }
 
   function init() {
@@ -113,6 +113,7 @@
     const signToken = params.get('t');
     if (signId && signToken && window.Cloud && Cloud.hasConfig()) {
       settings = Storage.getSettings();
+      settings.lang = 'en';       // the customer-facing signing page is always English
       applySettings();
       Cloud.initGuest();
       Invoice.startGuestSigning(signId, signToken);

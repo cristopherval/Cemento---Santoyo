@@ -285,6 +285,11 @@
     initPads(rec, signMode);
     configureSigbar(signMode);
     showSignStatus(rec);
+    // if it's still awaiting signature, ask the cloud right away in case the
+    // customer already signed (refreshOpen will flip the status when it lands)
+    if (rec.signStatus === 'pending' && window.Cloud && Cloud.isOnline && Cloud.isOnline()) {
+      Cloud.pullAll();
+    }
   }
 
   /* ---------- Export (share-only, pre-generated in the background) ---------- */
@@ -380,16 +385,31 @@
   }
 
   /* ---------- Remote signing (contractor side) ---------- */
+  // Re-sync the currently open invoice's signature status from local storage
+  // (called after every cloud pull) so "Pendiente de firma" flips to "Firmado"
+  // by itself when the customer signs.
+  function refreshOpen() {
+    if (!currentRecord) return;
+    const fresh = Storage.getHistory().find((r) => r.id === currentRecord.id);
+    if (!fresh) return;
+    if (fresh.signStatus !== currentRecord.signStatus
+        || fresh.customerSignature !== currentRecord.customerSignature) {
+      currentRecord = fresh;
+      showSignStatus(fresh);
+      if (fresh.signStatus === 'signed') App.toast(I18n.t('status_signed'));
+    }
+  }
+
   function showSignStatus(rec) {
     const el = $('invSignStatus');
     if (!el) return;
     if (!rec || !rec.signStatus) { el.hidden = true; el.textContent = ''; return; }
     el.hidden = false;
     if (rec.signStatus === 'signed') {
-      el.textContent = '✓ ' + I18n.t('status_signed') + (rec.signedAt ? ' · ' + fmtDate(rec.signedAt.slice(0, 10)) : '');
+      el.textContent = I18n.t('status_signed') + (rec.signedAt ? ' · ' + fmtDate(rec.signedAt.slice(0, 10)) : '');
       el.dataset.state = 'signed';
     } else {
-      el.textContent = '⏳ ' + I18n.t('status_pending_sign');
+      el.textContent = I18n.t('status_pending_sign');
       el.dataset.state = 'pending';
     }
   }
@@ -443,8 +463,8 @@
     setGuestMsg(I18n.t('sign_loading'));
     let rec;
     try { rec = await Cloud.getInvoiceForSigning(id, token); }
-    catch (e) { setGuestMsg(I18n.t('sign_invalid')); return; }
-    if (!rec) { setGuestMsg(I18n.t('sign_invalid')); return; }
+    catch (e) { console.error('[sign] RPC error:', e); setGuestMsg(I18n.t('sign_invalid')); return; }
+    if (!rec) { console.warn('[sign] invoice not found for id/token', id); setGuestMsg(I18n.t('sign_invalid')); return; }
 
     guestCtx = { id, token, rec };
     renderSheet(rec, 'digital', 'signSheet');
@@ -564,5 +584,5 @@
     recompute();
   }
 
-  global.Invoice = { init, startNew, fromQuote, renderHistory, startGuestSigning };
+  global.Invoice = { init, startNew, fromQuote, renderHistory, startGuestSigning, refreshOpen };
 })(window);
