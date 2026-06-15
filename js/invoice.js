@@ -177,9 +177,12 @@
     const c = AppData.COMPANY;
     const notes = AppData.INVOICE_NOTES.map((n) => `<li>${escapeHtml(n)}</li>`).join('');
     // customer signature: interactive canvas (digital) or blank line (physical / on paper)
-    // or, if already signed, the saved signature image
-    const custSpot = rec.customerSignature
-      ? `<img src="${rec.customerSignature}" class="isheet__ceosign-img" alt="" />`
+    // or, if already signed, the saved signature image.
+    // SECURITY: the signature can arrive from an untrusted remote signer, so only
+    // render it if it's strictly a base64 image data-URL (otherwise drop it).
+    const sig = safeSignature(rec.customerSignature);
+    const custSpot = sig
+      ? `<img src="${sig}" class="isheet__ceosign-img" alt="" />`
       : (mode === 'digital' ? `<canvas id="custSigCanvas" class="isheet__sigpad"></canvas>` : ``);
 
     $(targetId || 'invoiceSheet').innerHTML = `
@@ -583,6 +586,10 @@
   function escapeHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+  // Only allow a clean base64 image data-URL; reject anything else (anti-XSS).
+  function safeSignature(s) {
+    return /^data:image\/(png|jpeg|jpg);base64,[A-Za-z0-9+/=\s]+$/.test(s || '') ? s : '';
   }
 
   function init() {

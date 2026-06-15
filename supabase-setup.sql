@@ -86,6 +86,11 @@ create or replace function public.submit_signature(p_id text, p_token text, p_si
   set search_path = public
 as $$
 begin
+  -- only accept a base64 image data-URL (anti-injection / size sanity)
+  if p_sig is null or p_sig !~ '^data:image/(png|jpeg|jpg);base64,[A-Za-z0-9+/=[:space:]]+$'
+     or length(p_sig) > 500000 then
+    raise exception 'invalid signature';
+  end if;
   update public.invoices
      set data = data || jsonb_build_object(
            'customerSignature', p_sig,
