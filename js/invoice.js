@@ -162,6 +162,10 @@
       customerSignature: currentRecord ? currentRecord.customerSignature : '',
       ceoSignature: currentRecord ? currentRecord.ceoSignature : Storage.getCeoSignature(),
       signMode: signMode,
+      // keep the remote-signing fields so editing a signed invoice doesn't lose them
+      signToken: currentRecord ? currentRecord.signToken : null,
+      signStatus: currentRecord ? currentRecord.signStatus : null,
+      signedAt: currentRecord ? currentRecord.signedAt : null,
       quote: lastQuote,
       quoteId: linkedQuoteId,
       savedAt: todayISO()
@@ -241,7 +245,14 @@
   }
 
   /* ---------- Signature-choice dialog before showing the invoice ---------- */
-  function requestPreview() { App.openModal('signChoiceModal'); }
+  function requestPreview() {
+    // already signed (e.g. remotely via link) → keep that signature, just preview
+    if (currentRecord && currentRecord.customerSignature) {
+      doPreview(currentRecord.signMode || 'digital');
+      return;
+    }
+    App.openModal('signChoiceModal');
+  }
 
   async function doPreview(mode) {
     signMode = mode;
@@ -279,12 +290,10 @@
     $('inv_paid').value = rec.paid || '';
     $('inv_date').value = rec.date || todayISO();
     recompute();
-    renderSheet(rec, signMode);
-    App.showView('view-invoice');
-    App.openModal('invoiceModal');
-    initPads(rec, signMode);
-    configureSigbar(signMode);
     showSignStatus(rec);
+    // Land on the editable form (not the read-only preview) so a saved/signed
+    // invoice can still be edited. Preview/print/share are one tap away.
+    App.showView('view-invoice');
     // if it's still awaiting signature, ask the cloud right away in case the
     // customer already signed (refreshOpen will flip the status when it lands)
     if (rec.signStatus === 'pending' && window.Cloud && Cloud.isOnline && Cloud.isOnline()) {
@@ -401,9 +410,12 @@
   }
 
   function showSignStatus(rec) {
+    // show the "clear signature" button whenever a customer signature exists
+    const clearBtn = $('clearCustSignBtn');
+    if (clearBtn) clearBtn.hidden = !(rec && (rec.signStatus === 'signed' || rec.customerSignature));
     const el = $('invSignStatus');
     if (!el) return;
-    if (!rec || !rec.signStatus) { el.hidden = true; el.textContent = ''; return; }
+    if (!rec || !rec.signStatus) { el.hidden = true; el.textContent = ''; el.removeAttribute('data-state'); return; }
     el.hidden = false;
     if (rec.signStatus === 'signed') {
       el.textContent = I18n.t('status_signed') + (rec.signedAt ? ' · ' + fmtDate(rec.signedAt.slice(0, 10)) : '');
@@ -412,6 +424,21 @@
       el.textContent = I18n.t('status_pending_sign');
       el.dataset.state = 'pending';
     }
+  }
+
+  // Wipe the customer signature so a wrong/bad one can be re-collected:
+  // re-send the link or print for a physical signature.
+  function clearCustomerSignature() {
+    if (!currentRecord || !currentRecord.customerSignature) return;
+    if (!confirm(I18n.t('confirm_clear_sign'))) return;
+    currentRecord.customerSignature = '';
+    currentRecord.signStatus = null;
+    currentRecord.signedAt = null;
+    Storage.saveRecord(currentRecord);             // stamps updatedAt + queues sync
+    if (window.Cloud && Cloud.flushQueue) Cloud.flushQueue();   // push the cleared version now
+    showSignStatus(currentRecord);
+    App.refreshHistory();
+    App.toast(I18n.t('sign_cleared'));
   }
 
   // Save the invoice (assign number, persist, link to quote) if not saved yet.
@@ -566,6 +593,8 @@
     $('pdfInvoiceBtn').addEventListener('click', doPdf);
     const sendSign = $('sendSignBtn');
     if (sendSign) sendSign.addEventListener('click', sendForSignature);
+    const clearSign = $('clearCustSignBtn');
+    if (clearSign) clearSign.addEventListener('click', clearCustomerSignature);
 
     const newBtn = $('newInvoiceBtn');
     if (newBtn) newBtn.addEventListener('click', () => { startNew(null); App.toast(I18n.t('new_invoice')); });

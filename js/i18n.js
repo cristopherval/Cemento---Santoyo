@@ -174,6 +174,9 @@
       sign_first: 'Please sign first.',
       status_pending_sign: 'Pendiente de firma',
       status_signed: 'Firmado por el cliente',
+      clear_cust_sign: 'Borrar firma del cliente',
+      confirm_clear_sign: '¿Borrar la firma del cliente? Podrás reenviar el enlace o imprimir para firma física.',
+      sign_cleared: 'Firma borrada',
       // --- respaldo ---
       export_backup: 'Exportar respaldo',
       import_backup: 'Importar respaldo',
@@ -358,6 +361,9 @@
       sign_first: 'Please sign first.',
       status_pending_sign: 'Awaiting signature',
       status_signed: 'Signed by customer',
+      clear_cust_sign: 'Clear customer signature',
+      confirm_clear_sign: 'Clear the customer signature? You can re-send the link or print for a physical signature.',
+      sign_cleared: 'Signature cleared',
       // --- backup ---
       export_backup: 'Export backup',
       import_backup: 'Import backup',
