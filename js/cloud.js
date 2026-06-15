@@ -257,6 +257,14 @@
     return Storage.nextInvoiceNumber();
   }
 
+  // manual "sync everything now" — push pending changes, then pull latest
+  async function syncNow() {
+    if (!ready() || !navigator.onLine) { updateStatus(); return false; }
+    await flushQueue();
+    await pullAll();
+    return true;
+  }
+
   /* ---------------- remote signing ---------------- */
   function hasConfig() {
     const c = cfg();
@@ -315,7 +323,7 @@
     });
   }
 
-  global.Cloud = { start, signIn, signOut, onLocalChange, pullAll, flushQueue, nextInvoiceNumber,
+  global.Cloud = { start, signIn, signOut, onLocalChange, pullAll, flushQueue, syncNow, nextInvoiceNumber,
                    hasConfig, initGuest, getInvoiceForSigning, submitSignature, sendForSignature,
                    isEnabled: () => enabled, isOnline: () => ready() && navigator.onLine };
 })(window);

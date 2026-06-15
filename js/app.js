@@ -82,6 +82,17 @@
 
     $('backToCalcBtn').addEventListener('click', () => showView('view-quotes'));
 
+    const syncBtn = $('syncNowBtn');
+    if (syncBtn) syncBtn.addEventListener('click', async () => {
+      if (!window.Cloud || !Cloud.isEnabled()) { toast(I18n.t('sign_need_online')); return; }
+      if (!Cloud.isOnline()) { toast(I18n.t('sync_offline')); return; }
+      syncBtn.disabled = true;
+      toast(I18n.t('sync_busy'));
+      try { await Cloud.syncNow(); toast(I18n.t('sync_ok')); }
+      catch (e) { toast(I18n.t('sync_offline')); }
+      finally { syncBtn.disabled = false; }
+    });
+
     $('exportBackupBtn').addEventListener('click', exportBackup);
     $('importBackupBtn').addEventListener('click', () => $('importBackupInput').click());
     $('importBackupInput').addEventListener('change', importBackup);

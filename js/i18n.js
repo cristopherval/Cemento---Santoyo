@@ -156,6 +156,7 @@
       sync_ok: '✓ Sincronizado',
       sync_busy: '↻ Sincronizando…',
       sync_offline: '⚠ Sin conexión',
+      sync_now: 'Sincronizar todo',
       share_unsupported: 'No se pudo compartir aquí. Abre la app en HTTPS (sitio publicado).',
       // --- firma remota ---
       send_to_sign: 'Enviar a firmar al cliente',
@@ -339,6 +340,7 @@
       sync_ok: '✓ Synced',
       sync_busy: '↻ Syncing…',
       sync_offline: '⚠ Offline',
+      sync_now: 'Sync all',
       share_unsupported: 'Could not share here. Open the app over HTTPS (published site).',
       // --- remote signing ---
       send_to_sign: 'Send to customer to sign',
