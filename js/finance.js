@@ -8,12 +8,10 @@
 
   let editId = null;          // job being edited in the dialog
   let editCosts = [];         // working copy of that job's costs
-  let monthFilter = '';       // '' = all months, else 'YYYY-MM'
+  const st = { query: '', month: 'all', week: false };   // list filters
 
-  const MONTHS = {
-    es: ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],
-    en: ['January','February','March','April','May','June','July','August','September','October','November','December']
-  };
+  const getDate = (j) => j.date;
+  const getText = (j) => j.title || '';
 
   /* ---------- Derived fields ---------- */
   function payStatusOf(total, paid) {
@@ -69,32 +67,18 @@
     openEditor(rec.id);
   }
 
-  function monthKey(job) { return (job.date || '').slice(0, 7) || '0000-00'; }
-  function monthLabel(key) {
-    const months = MONTHS[I18n.lang] || MONTHS.es;
-    const [y, m] = key.split('-');
-    return months[(+m || 1) - 1] ? `${months[(+m || 1) - 1]} ${y}` : key;
-  }
-
-  /* ---------- Month filter + totals ---------- */
+  /* ---------- Filters + totals ---------- */
   function render() {
     const jobs = Storage.getJobs();
-    // drop a stale filter if that month no longer has jobs
-    if (monthFilter && !jobs.some((j) => monthKey(j) === monthFilter)) monthFilter = '';
-    const filtered = monthFilter ? jobs.filter((j) => monthKey(j) === monthFilter) : jobs;
-
-    renderFilter(jobs);
+    const sel = $('finMonth');
+    if (sel) {
+      sel.innerHTML = Filters.monthOptionsHTML(jobs, getDate);
+      sel.value = st.month;
+      if (sel.value !== st.month) { st.month = 'all'; sel.value = 'all'; }
+    }
+    const filtered = Filters.apply(jobs, getDate, getText, st);
     renderGrand(filtered);
     renderJobs(filtered);
-  }
-
-  function renderFilter(jobs) {
-    const sel = $('monthFilter');
-    if (!sel) return;
-    const keys = [...new Set(jobs.map(monthKey))].sort().reverse();
-    sel.innerHTML = `<option value="">${I18n.t('all_months')}</option>` +
-      keys.map((k) => `<option value="${k}">${monthLabel(k)}</option>`).join('');
-    sel.value = monthFilter;
   }
 
   function renderGrand(jobs) {
@@ -107,11 +91,8 @@
     $('g_net').classList.toggle('is-negative', net < 0);
   }
 
-  function renderJobs(jobs) {
-    const wrap = $('financeList');
-    if (!wrap) return;
-    if (!jobs.length) { wrap.innerHTML = `<p class="muted">${I18n.t('finance_empty')}</p>`; return; }
-    wrap.innerHTML = jobs.map((j) => `
+  function jobHTML(j) {
+    return `
       <div class="histitem histitem--job" data-open="${j.id}">
         <div class="histitem__info">
           <span class="badge badge--${j.payStatus}">${I18n.t('pay_' + j.payStatus)}</span>
@@ -124,7 +105,23 @@
           <span>${I18n.t('net_profit')}</span>
           <strong>${Calc.fmtMoney(j.net)}</strong>
         </div>
-      </div>`).join('');
+      </div>`;
+  }
+
+  function renderJobs(jobs) {
+    const wrap = $('financeList');
+    if (!wrap) return;
+    if (!jobs.length) {
+      const all = Storage.getJobs();
+      wrap.innerHTML = `<p class="muted">${I18n.t(all.length ? 'no_results' : 'finance_empty')}</p>`;
+      return;
+    }
+    if (st.week) {
+      wrap.innerHTML = Filters.groupByWeek(jobs, getDate).map((g) =>
+        `<div class="weekgroup"><div class="weekgroup__head">${g.label}</div>${g.items.map(jobHTML).join('')}</div>`).join('');
+    } else {
+      wrap.innerHTML = jobs.map(jobHTML).join('');
+    }
     wrap.querySelectorAll('[data-open]').forEach((el) =>
       el.addEventListener('click', () => openEditor(el.dataset.open)));
   }
@@ -238,13 +235,25 @@
     $('jobAddCostBtn').addEventListener('click', () => { editCosts.push({ concept: '', amount: 0 }); renderCosts(); recomputeDialog(); });
     $('jobSaveBtn').addEventListener('click', saveEdit);
     $('jobDeleteBtn').addEventListener('click', deleteEdit);
-    $('monthFilter').addEventListener('change', (e) => { monthFilter = e.target.value; render(); });
     document.querySelectorAll('[data-close-job]').forEach((el) =>
       el.addEventListener('click', () => App.closeModal('jobEditModal')));
-    document.addEventListener('i18n:changed', render);
-    // open on the most recent month with jobs by default
-    const keys = [...new Set(Storage.getJobs().map(monthKey))].sort().reverse();
-    if (keys.length) monthFilter = keys[0];
+
+    st.month = Filters.currentMonth();    // default to the current month
+    const search = $('finSearch');
+    if (search) {
+      search.placeholder = I18n.t('search_ph');
+      search.addEventListener('input', () => { st.query = search.value; render(); });
+    }
+    const sel = $('finMonth');
+    if (sel) sel.addEventListener('change', () => { st.month = sel.value; render(); });
+    const wk = $('finWeekBtn');
+    if (wk) wk.addEventListener('click', () => {
+      st.week = !st.week; wk.classList.toggle('is-active', st.week); render();
+    });
+    document.addEventListener('i18n:changed', () => {
+      if (search) search.placeholder = I18n.t('search_ph');
+      render();
+    });
     render();
   }
 

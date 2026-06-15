@@ -185,8 +185,13 @@
     <section class="view" id="view-quotes">
       <div class="card">
         <h2 class="card__title" data-i18n="quotes_title">Cotizaciones</h2>
-        <p class="card__hint" data-i18n="quotes_hint">Cotizaciones guardadas. Edítalas, factura o confirma el trabajo.</p>
-        <input type="search" id="quoteSearch" class="search-input" data-i18n-ph="search_quotes" placeholder="Buscar por nombre o descripción…" />
+        <div class="filterbar">
+          <input type="search" id="quoteSearch" class="filterbar__search" placeholder="Buscar…" />
+          <div class="filterbar__row">
+            <select id="quoteMonth" class="month-filter" aria-label="Mes"></select>
+            <button type="button" class="chip" id="quoteWeekBtn" data-i18n="by_week">Por semana</button>
+          </div>
+        </div>
         <div id="quotesList"></div>
       </div>
     </section>
@@ -240,21 +245,27 @@
 
         <p class="sign-status" id="invSignStatus" hidden></p>
 
-        <div class="totals__actions">
-          <button class="btn btn--ghost" id="backToCalcBtn" data-i18n="back">Volver</button>
-          <button class="btn btn--primary" id="previewInvoiceBtn" data-i18n="preview">Vista previa</button>
+        <div class="invoice-actions">
+          <div class="totals__actions">
+            <button class="btn btn--ghost" id="backToCalcBtn" data-i18n="back">Volver</button>
+            <button class="btn btn--primary" id="previewInvoiceBtn" data-i18n="preview">Vista previa</button>
+          </div>
+          <button class="btn btn--ghost btn--block" id="sendSignBtn" data-i18n="send_to_sign">Enviar a firmar al cliente</button>
+          <button class="btn btn--danger btn--block" id="clearCustSignBtn" data-i18n="clear_cust_sign" hidden>Borrar firma del cliente</button>
         </div>
-        <button class="btn btn--ghost btn--block" id="sendSignBtn" data-i18n="send_to_sign">Enviar a firmar al cliente</button>
-        <button class="btn btn--danger btn--block" id="clearCustSignBtn" data-i18n="clear_cust_sign" hidden>Borrar firma del cliente</button>
       </div>
     </section>
 
     <!-- ---------- FINANCE VIEW ---------- -->
     <section class="view" id="view-finance">
       <div class="card">
-        <div class="invoice-form__head">
-          <h2 class="card__title" data-i18n="finance_title">Finanzas</h2>
-          <select id="monthFilter" class="month-filter" aria-label="Mes"></select>
+        <h2 class="card__title" data-i18n="finance_title">Finanzas</h2>
+        <div class="filterbar">
+          <input type="search" id="finSearch" class="filterbar__search" placeholder="Buscar…" />
+          <div class="filterbar__row">
+            <select id="finMonth" class="month-filter" aria-label="Mes"></select>
+            <button type="button" class="chip" id="finWeekBtn" data-i18n="by_week">Por semana</button>
+          </div>
         </div>
         <div class="totalrow"><span data-i18n="collected">Cobrado</span><strong id="g_collected">$0.00</strong></div>
         <div class="totalrow"><span data-i18n="to_collect">Por cobrar</span><strong id="g_pending">$0.00</strong></div>
@@ -461,6 +472,7 @@
   <script src="js/data.js" defer></script>
   <script src="js/storage.js" defer></script>
   <script src="js/calc.js" defer></script>
+  <script src="js/filters.js" defer></script>
   <script src="js/materials.js" defer></script>
   <script src="js/invoice.js" defer></script>
   <script src="js/quotes.js" defer></script>

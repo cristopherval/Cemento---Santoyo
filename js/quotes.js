@@ -1,6 +1,7 @@
 /* Quotes — list of saved quotes (cotizaciones).
    Each quote can be edited (reloaded into the calculator), turned into an
-   invoice, or confirmed into Finance. Status: pendiente → aceptada → confirmada. */
+   invoice, or confirmed into Finance. Status: pendiente → aceptada → confirmada.
+   List is filterable by search text, month (default: current) and week grouping. */
 (function (global) {
   const $ = (id) => document.getElementById(id);
 
@@ -10,33 +11,20 @@
     confirmada: 'status_confirmed'
   };
 
-  let query = '';
+  const st = { query: '', month: 'all', week: false };
 
-  // searchable text for a quote: title, customer name/phone/address/email
-  function matches(q, term) {
-    if (!term) return true;
+  const getDate = (q) => q.date;
+  function getText(q) {
     const cu = q.customer || {};
-    const hay = [q.title, cu.name, cu.phone, cu.address, cu.email]
-      .filter(Boolean).join(' ').toLowerCase();
-    return hay.indexOf(term) >= 0;
+    return [q.title, cu.name, cu.phone, cu.address, cu.email].filter(Boolean).join(' ');
   }
 
-  function renderList() {
-    const wrap = $('quotesList');
-    if (!wrap) return;
-    const all = Storage.getQuotes();
-    if (!all.length) { wrap.innerHTML = `<p class="muted">${I18n.t('quotes_empty')}</p>`; return; }
-
-    const term = query.trim().toLowerCase();
-    const list = all.filter((q) => matches(q, term));
-    if (!list.length) { wrap.innerHTML = `<p class="muted">${I18n.t('no_results')}</p>`; return; }
-
-    wrap.innerHTML = list.map((q) => {
-      const c = q.calc || {};
-      const statusKey = STATUS_KEY[q.status] || 'status_pending';
-      const confirmed = q.status === 'confirmada';
-      const invLabel = q.invoiceId ? I18n.t('view_invoice') : I18n.t('create_invoice');
-      return `
+  function itemHTML(q) {
+    const c = q.calc || {};
+    const statusKey = STATUS_KEY[q.status] || 'status_pending';
+    const confirmed = q.status === 'confirmada';
+    const invLabel = q.invoiceId ? I18n.t('view_invoice') : I18n.t('create_invoice');
+    return `
       <div class="histitem histitem--quote">
         <div class="histitem__info">
           <span class="badge badge--${q.status || 'pendiente'}">${I18n.t(statusKey)}</span>
@@ -52,8 +40,34 @@
           <button class="btn btn--sm btn--danger" data-del="${q.id}">${I18n.t('delete')}</button>
         </div>
       </div>`;
-    }).join('');
+  }
 
+  function renderList() {
+    const wrap = $('quotesList');
+    if (!wrap) return;
+    const all = Storage.getQuotes();
+
+    const sel = $('quoteMonth');
+    if (sel) {
+      sel.innerHTML = Filters.monthOptionsHTML(all, getDate);
+      sel.value = st.month;
+      if (sel.value !== st.month) { st.month = 'all'; sel.value = 'all'; }
+    }
+
+    if (!all.length) { wrap.innerHTML = `<p class="muted">${I18n.t('quotes_empty')}</p>`; return; }
+    const list = Filters.apply(all, getDate, getText, st);
+    if (!list.length) { wrap.innerHTML = `<p class="muted">${I18n.t('no_results')}</p>`; return; }
+
+    if (st.week) {
+      wrap.innerHTML = Filters.groupByWeek(list, getDate).map((g) =>
+        `<div class="weekgroup"><div class="weekgroup__head">${g.label}</div>${g.items.map(itemHTML).join('')}</div>`).join('');
+    } else {
+      wrap.innerHTML = list.map(itemHTML).join('');
+    }
+    bindActions(wrap);
+  }
+
+  function bindActions(wrap) {
     wrap.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', () => {
       const rec = Storage.getQuote(b.dataset.edit);
       if (rec) Quote.loadQuote(rec);
@@ -84,9 +98,22 @@
   }
 
   function init() {
+    st.month = Filters.currentMonth();
     const search = $('quoteSearch');
-    if (search) search.addEventListener('input', () => { query = search.value; renderList(); });
-    document.addEventListener('i18n:changed', renderList);
+    if (search) {
+      search.placeholder = I18n.t('search_ph');
+      search.addEventListener('input', () => { st.query = search.value; renderList(); });
+    }
+    const sel = $('quoteMonth');
+    if (sel) sel.addEventListener('change', () => { st.month = sel.value; renderList(); });
+    const wk = $('quoteWeekBtn');
+    if (wk) wk.addEventListener('click', () => {
+      st.week = !st.week; wk.classList.toggle('is-active', st.week); renderList();
+    });
+    document.addEventListener('i18n:changed', () => {
+      if (search) search.placeholder = I18n.t('search_ph');
+      renderList();
+    });
     renderList();
   }
 

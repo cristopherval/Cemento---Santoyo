@@ -391,12 +391,33 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; marg
 .money.pos, .money.pos strong { color: #15a05a; }
 .money.neg, .money.neg strong { color: var(--red); }
 
-/* ===================== MONTH FILTER ===================== */
-.month-filter {
-  width: auto; min-width: 0; flex-shrink: 0; max-width: 55%;
-  padding: 7px 10px; font-size: .82rem; font-weight: 700;
+/* ===================== FILTER BAR (search + month + week) ===================== */
+.filterbar { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.filterbar__search {
+  width: 100%; padding: 9px 12px; font-size: 16px;
   border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: var(--input-bg); color: var(--text);
+}
+.filterbar__row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.month-filter {
+  flex: 1 1 auto; min-width: 0;
+  padding: 8px 10px; font-size: .85rem; font-weight: 700;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--input-bg); color: var(--text);
+}
+.chip {
+  flex-shrink: 0; padding: 8px 14px; font-size: .82rem; font-weight: 700;
+  border: 1px solid var(--border); border-radius: 999px;
+  background: var(--surface-2); color: var(--text-dim); cursor: pointer;
+}
+.chip.is-active { background: var(--red); color: #fff; border-color: var(--red); }
+
+/* week grouping headers */
+.weekgroup { margin-bottom: 14px; }
+.weekgroup__head {
+  font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .5px;
+  color: var(--text-dim); padding: 4px 2px 8px; border-bottom: 1px solid var(--border);
+  margin-bottom: 10px;
 }
 
 /* tall dialog (job editor) */
@@ -428,8 +449,12 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; marg
 .sync-status[data-state="busy"] { color: var(--text-dim); }
 .sync-status[data-state="offline"] { color: var(--red); }
 
+/* invoice action buttons stacked with breathing room */
+.invoice-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.invoice-actions .totals__actions { margin: 0; }
+
 /* invoice signature status line (contractor side) */
-.sign-status { font-size: .9rem; font-weight: 800; text-align: center; margin: 4px 0 0; }
+.sign-status { font-size: .9rem; font-weight: 800; text-align: center; margin: 4px 0 8px; }
 .sign-status[data-state="signed"] { color: #15a05a; }
 .sign-status[data-state="pending"] { color: #8a6d00; }
 
