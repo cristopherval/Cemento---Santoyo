@@ -10,11 +10,26 @@
     confirmada: 'status_confirmed'
   };
 
+  let query = '';
+
+  // searchable text for a quote: title, customer name/phone/address/email
+  function matches(q, term) {
+    if (!term) return true;
+    const cu = q.customer || {};
+    const hay = [q.title, cu.name, cu.phone, cu.address, cu.email]
+      .filter(Boolean).join(' ').toLowerCase();
+    return hay.indexOf(term) >= 0;
+  }
+
   function renderList() {
     const wrap = $('quotesList');
     if (!wrap) return;
-    const list = Storage.getQuotes();
-    if (!list.length) { wrap.innerHTML = `<p class="muted">${I18n.t('quotes_empty')}</p>`; return; }
+    const all = Storage.getQuotes();
+    if (!all.length) { wrap.innerHTML = `<p class="muted">${I18n.t('quotes_empty')}</p>`; return; }
+
+    const term = query.trim().toLowerCase();
+    const list = all.filter((q) => matches(q, term));
+    if (!list.length) { wrap.innerHTML = `<p class="muted">${I18n.t('no_results')}</p>`; return; }
 
     wrap.innerHTML = list.map((q) => {
       const c = q.calc || {};
@@ -69,6 +84,8 @@
   }
 
   function init() {
+    const search = $('quoteSearch');
+    if (search) search.addEventListener('input', () => { query = search.value; renderList(); });
     document.addEventListener('i18n:changed', renderList);
     renderList();
   }

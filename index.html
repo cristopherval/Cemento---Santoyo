@@ -8,7 +8,10 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; img-src 'self' data: blob:; font-src 'self'; style-src 'self'; script-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; manifest-src 'self'; worker-src 'self';" />
   <meta name="referrer" content="no-referrer" />
   <meta name="theme-color" content="#c1121f" />
-  <meta name="description" content="Santoyo's Concrete Work — Calculadora de concreto y generador de invoices" />
+  <meta name="description" content="Santoyo's Concrete Work" />
+  <meta property="og:title" content="Santoyo's Concrete Work" />
+  <meta property="og:description" content="Sign your invoice" />
+  <meta property="og:type" content="website" />
   <title>Santoyo's Concrete Work</title>
 
   <link rel="manifest" href="manifest.json" />
@@ -183,6 +186,7 @@
       <div class="card">
         <h2 class="card__title" data-i18n="quotes_title">Cotizaciones</h2>
         <p class="card__hint" data-i18n="quotes_hint">Cotizaciones guardadas. Edítalas, factura o confirma el trabajo.</p>
+        <input type="search" id="quoteSearch" class="search-input" data-i18n-ph="search_quotes" placeholder="Buscar por nombre o descripción…" />
         <div id="quotesList"></div>
       </div>
     </section>

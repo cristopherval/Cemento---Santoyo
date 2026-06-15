@@ -491,14 +491,27 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; marg
   background: none; border: none; color: var(--text-dim); font-size: .85rem; cursor: pointer;
 }
 
+/* search box (quotes list) */
+.search-input { width: 100%; margin: 0 0 12px; -webkit-appearance: none; appearance: none; }
+
+/* responsive safety nets: never let long text or media push the layout wide */
+img { max-width: 100%; height: auto; }
+.histitem__info, .histitem__info span, .histitem__info small,
+.signview__head h2, .sign-status, .drawer__company { overflow-wrap: anywhere; }
+
 /* ===================== RESPONSIVE ===================== */
-@media (max-width: 360px) {
+@media (max-width: 380px) {
   .grid3 { grid-template-columns: 1fr; }
   .mrow__name { font-size: .76rem; }
   .modal__actions .btn { padding: 8px 10px; }
+  /* stack action button rows so nothing gets squeezed on tiny phones */
+  .totals__actions, .signview__btns { flex-direction: column; }
+  .signview__btns .btn, .signview__btns #signSubmitBtn { flex: 1 1 auto; }
 }
 @media (min-width: 721px) {
   .app { padding: 20px; }
+  /* center the customer signing screen nicely on tablets/desktop */
+  .signview__scroll { display: flex; justify-content: center; align-items: flex-start; }
 }
 
 /* ===================== PRINT ===================== */
