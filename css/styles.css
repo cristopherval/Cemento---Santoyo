@@ -256,6 +256,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; marg
 .toggle-group button { border: none; background: none; color: var(--text-dim); padding: 7px 16px; border-radius: 999px; cursor: pointer; font-weight: 700; font-size: .82rem; }
 .toggle-group button.is-active { background: var(--red); color: #fff; }
 .drawer__sep { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+.drawer__backup { display: flex; flex-direction: column; gap: 8px; }
 .drawer__company { font-size: .82rem; color: var(--text-dim); line-height: 1.6; margin-bottom: 16px; }
 
 /* ===================== MODAL (invoice preview) ===================== */

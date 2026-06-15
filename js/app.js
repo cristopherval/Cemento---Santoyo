@@ -63,18 +63,69 @@
       b.addEventListener('click', () => setTheme(b.dataset.theme)));
 
     $('clearDataBtn').addEventListener('click', () => {
-      if (confirm(I18n.t('confirm_clear'))) {
-        Storage.clearHistory(); Storage.clearQuotes(); Storage.clearJobs();
-        if (window.Quotes) Quotes.renderList();
-        if (window.Finance) Finance.render();
-        Invoice.renderHistory();
-        toast(I18n.t('saved'));
+      // Step 1: confirm
+      if (!confirm(I18n.t('confirm_clear'))) return;
+      // Step 2: require typing the exact phrase
+      const phrase = I18n.t('delete_all_phrase');
+      const typed = prompt(I18n.t('confirm_clear_type').replace('{phrase}', phrase));
+      if (typed == null) return;                                   // cancelled
+      if (typed.trim().toUpperCase() !== phrase.toUpperCase()) {   // wrong text
+        toast(I18n.t('clear_cancelled'));
+        return;
       }
+      Storage.clearHistory(); Storage.clearQuotes(); Storage.clearJobs();
+      if (window.Quotes) Quotes.renderList();
+      if (window.Finance) Finance.render();
+      Invoice.renderHistory();
+      toast(I18n.t('saved'));
     });
 
     $('backToCalcBtn').addEventListener('click', () => showView('view-quotes'));
 
+    $('exportBackupBtn').addEventListener('click', exportBackup);
+    $('importBackupBtn').addEventListener('click', () => $('importBackupInput').click());
+    $('importBackupInput').addEventListener('change', importBackup);
+
     bindKeyboardNav();
+  }
+
+  /* ---------- Backup (export / import a JSON file) ---------- */
+  function exportBackup() {
+    const data = Storage.exportAll();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const name = 'santoyo-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    toast(I18n.t('backup_done'));
+  }
+
+  function importBackup(e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';            // allow re-selecting the same file later
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      let obj;
+      try { obj = JSON.parse(reader.result); } catch (_) { toast(I18n.t('restore_error')); return; }
+      if (!obj || obj.app !== 'santoyo') { toast(I18n.t('restore_error')); return; }
+      if (!confirm(I18n.t('confirm_restore'))) return;
+      if (!Storage.importAll(obj)) { toast(I18n.t('restore_error')); return; }
+      refreshAll();
+      // push the restored data up to the cloud (if signed in)
+      if (window.Cloud && Cloud.isEnabled()) {
+        Storage.getQuotes().forEach((r) => Cloud.onLocalChange('quotes', 'upsert', r.id, r));
+        Storage.getJobs().forEach((r) => Cloud.onLocalChange('jobs', 'upsert', r.id, r));
+        Storage.getHistory().forEach((r) => Cloud.onLocalChange('invoices', 'upsert', r.id, r));
+        const sig = Storage.getCeoSignature();
+        if (sig) Cloud.onLocalChange('kv', 'upsert', 'ceoSignature', { value: sig });
+        Cloud.flushQueue();
+      }
+      toast(I18n.t('restore_done'));
+    };
+    reader.readAsText(file);
   }
 
   /* Hide the bottom nav while the soft keyboard is open (a text field is focused),

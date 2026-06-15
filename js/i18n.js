@@ -172,7 +172,17 @@
       sign_loading: 'Loading invoice...',
       sign_first: 'Please sign first.',
       status_pending_sign: 'Pendiente de firma',
-      status_signed: 'Firmado por el cliente'
+      status_signed: 'Firmado por el cliente',
+      // --- respaldo ---
+      export_backup: 'Exportar respaldo',
+      import_backup: 'Importar respaldo',
+      backup_done: 'Respaldo descargado',
+      restore_done: 'Respaldo restaurado',
+      restore_error: 'Archivo de respaldo inválido',
+      confirm_restore: 'Esto reemplazará los datos de este dispositivo con los del respaldo. ¿Continuar?',
+      delete_all_phrase: 'ELIMINAR TODO',
+      confirm_clear_type: 'Acción irreversible. Para confirmar, escribe exactamente:\n\n{phrase}',
+      clear_cancelled: 'Texto incorrecto. No se borró nada.'
     },
     en: {
       concrete_title: 'Concrete (Cubic Yards)',
@@ -345,7 +355,17 @@
       sign_loading: 'Loading invoice...',
       sign_first: 'Please sign first.',
       status_pending_sign: 'Awaiting signature',
-      status_signed: 'Signed by customer'
+      status_signed: 'Signed by customer',
+      // --- backup ---
+      export_backup: 'Export backup',
+      import_backup: 'Import backup',
+      backup_done: 'Backup downloaded',
+      restore_done: 'Backup restored',
+      restore_error: 'Invalid backup file',
+      confirm_restore: 'This will replace this device\'s data with the backup. Continue?',
+      delete_all_phrase: 'DELETE ALL',
+      confirm_clear_type: 'Irreversible action. To confirm, type exactly:\n\n{phrase}',
+      clear_cancelled: 'Wrong text. Nothing was deleted.'
     }
   };
 

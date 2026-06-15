@@ -97,7 +97,32 @@
       write(KEY_COUNTER, n);
       return n;
     },
-    peekInvoiceNumber() { return (read(KEY_COUNTER, 1000) | 0) + 1; }
+    peekInvoiceNumber() { return (read(KEY_COUNTER, 1000) | 0) + 1; },
+
+    /* ---------- Backup (export / import all data) ---------- */
+    exportAll() {
+      return {
+        app: 'santoyo',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        quotes: this.getQuotes(),
+        jobs: this.getJobs(),
+        invoices: this.getHistory(),
+        ceoSignature: this.getCeoSignature(),
+        settings: this.getSettings(),
+        invoiceCounter: read(KEY_COUNTER, 1000)
+      };
+    },
+    importAll(obj) {
+      if (!obj || obj.app !== 'santoyo') return false;
+      if (Array.isArray(obj.quotes)) write(KEY_QUOTES, obj.quotes);
+      if (Array.isArray(obj.jobs)) write(KEY_JOBS, obj.jobs);
+      if (Array.isArray(obj.invoices)) write(KEY_HISTORY, obj.invoices);
+      if (typeof obj.ceoSignature === 'string') write(KEY_CEO_SIG, obj.ceoSignature);
+      if (obj.settings && typeof obj.settings === 'object') write(KEY_SETTINGS, obj.settings);
+      if (obj.invoiceCounter != null) write(KEY_COUNTER, obj.invoiceCounter | 0);
+      return true;
+    }
   };
 
   global.Storage = Storage;
