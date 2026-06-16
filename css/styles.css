@@ -342,9 +342,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; marg
 /* signatures — lower, with the CEO signature already placed */
 .isheet__signs { display: flex; justify-content: space-between; gap: 40px; margin-top: 90px; }
 .isheet__sign { flex: 1; text-align: center; }
-.isheet__sign .sigspot { height: 70px; display: flex; align-items: flex-end; justify-content: center; }
+.isheet__sign .sigspot { height: 86px; display: flex; align-items: flex-end; justify-content: center; }
 .isheet__sigpad {
-  width: 240px; height: 66px; touch-action: none; cursor: crosshair;
+  width: 100%; max-width: 300px; height: 82px; touch-action: none; cursor: crosshair;
   background: #fff;
 }
 .isheet__ceosign { font-family: "Segoe Script", "Brush Script MT", "Snell Roundhand", cursive; font-size: 30px; color: #14223e; transform: rotate(-3deg); }
@@ -484,6 +484,11 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; marg
   border-top: 1px solid var(--border); background: var(--surface);
 }
 .signview__hint { font-size: .8rem; color: var(--text-dim); text-align: center; }
+/* give the customer a big finger-signing area: stack the two signature columns
+   so the customer pad spans the full width, and make it tall */
+.signview .isheet__signs { flex-direction: column; gap: 26px; margin-top: 48px; }
+.signview .isheet__sign .sigspot { height: 150px; }
+.signview .isheet__sigpad { max-width: none; height: 146px; border: 1px dashed #c2ccda; border-radius: 6px; }
 .signview__btns { display: flex; gap: 10px; }
 .signview__btns .btn { flex: 1; }
 .signview__btns #signSubmitBtn { flex: 2; }
