@@ -83,21 +83,51 @@
     $('backToCalcBtn').addEventListener('click', () => showView('view-quotes'));
 
     const syncBtn = $('syncNowBtn');
-    if (syncBtn) syncBtn.addEventListener('click', async () => {
-      if (!window.Cloud || !Cloud.isEnabled()) { toast(I18n.t('sign_need_online')); return; }
-      if (!Cloud.isOnline()) { toast(I18n.t('sync_offline')); return; }
-      syncBtn.disabled = true;
-      toast(I18n.t('sync_busy'));
-      try { await Cloud.syncNow(); toast(I18n.t('sync_ok')); }
-      catch (e) { toast(I18n.t('sync_offline')); }
-      finally { syncBtn.disabled = false; }
-    });
+    if (syncBtn) {
+      // tap = sync data · hold ~1.5s = force-update the app code
+      let pressTimer = null, didLongPress = false;
+      const startPress = () => {
+        didLongPress = false;
+        pressTimer = setTimeout(() => { didLongPress = true; forceUpdate(); }, 1500);
+      };
+      const cancelPress = () => clearTimeout(pressTimer);
+      syncBtn.addEventListener('pointerdown', startPress);
+      ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => syncBtn.addEventListener(ev, cancelPress));
+
+      syncBtn.addEventListener('click', async () => {
+        if (didLongPress) { didLongPress = false; return; }   // the hold already handled it
+        if (!window.Cloud || !Cloud.isEnabled()) { toast(I18n.t('sign_need_online')); return; }
+        if (!Cloud.isOnline()) { toast(I18n.t('sync_offline')); return; }
+        syncBtn.disabled = true;
+        toast(I18n.t('sync_busy'));
+        try { await Cloud.syncNow(); toast(I18n.t('sync_ok')); }
+        catch (e) { toast(I18n.t('sync_offline')); }
+        finally { syncBtn.disabled = false; }
+      });
+    }
 
     $('exportBackupBtn').addEventListener('click', exportBackup);
     $('importBackupBtn').addEventListener('click', () => $('importBackupInput').click());
     $('importBackupInput').addEventListener('change', importBackup);
 
     bindKeyboardNav();
+  }
+
+  /* ---------- Force-update the app code (clear caches + reload latest) ---------- */
+  async function forceUpdate() {
+    if (!confirm(I18n.t('confirm_update'))) return;
+    toast(I18n.t('updating'));
+    try {
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+    } catch (e) {}
+    location.reload();
   }
 
   /* ---------- Backup (export / import a JSON file) ---------- */

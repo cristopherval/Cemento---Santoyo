@@ -161,6 +161,9 @@
       sync_busy: '↻ Sincronizando…',
       sync_offline: '⚠ Sin conexión',
       sync_now: 'Sincronizar todo',
+      sync_hold_hint: 'Mantén presionado para actualizar el sistema',
+      confirm_update: '¿Actualizar el sistema a la última versión? La app se recargará.',
+      updating: 'Actualizando…',
       share_unsupported: 'No se pudo compartir aquí. Abre la app en HTTPS (sitio publicado).',
       // --- firma remota ---
       send_to_sign: 'Enviar a firmar al cliente',
@@ -352,6 +355,9 @@
       sync_busy: '↻ Syncing…',
       sync_offline: '⚠ Offline',
       sync_now: 'Sync all',
+      sync_hold_hint: 'Hold to update the app',
+      confirm_update: 'Update the app to the latest version? It will reload.',
+      updating: 'Updating…',
       share_unsupported: 'Could not share here. Open the app over HTTPS (published site).',
       // --- remote signing ---
       send_to_sign: 'Send to customer to sign',
