@@ -70,10 +70,23 @@
     ).join('');
   }
 
+  function isAreaOnly() { const cb = $('areaOnly'); return !!(cb && cb.checked); }
+  // show/hide the Length & Width fields based on the "only area" checkbox
+  function applyAreaOnly() {
+    const view = $('view-calc');
+    if (view) view.classList.toggle('is-area-only', isAreaOnly());
+  }
+
   function updateEstimated() {
-    const concrete = Calc.concreteCuYd($('c_length').value, $('c_width').value, $('c_depth').value);
+    const on = isAreaOnly();
+    const areaInput = $('area_sqft');
+    const lwArea = Calc.areaSqFt($('c_length').value, $('c_width').value);
+    // in "only area" mode the area is typed by the user; otherwise it's L×W
+    const area = on ? Calc.num(areaInput.value) : lwArea;
+    const concrete = on
+      ? Calc.concreteCuYdFromArea(area, $('c_depth').value)
+      : Calc.concreteCuYd($('c_length').value, $('c_width').value, $('c_depth').value);
     const footing = Calc.footingCuYd($('f_length').value, $('f_width').value, $('f_depth').value);
-    const area = Calc.areaSqFt($('c_length').value, $('c_width').value);
     const rebar = Calc.rebarEstimate(area, $('rebarSpacing').value);
 
     setEst('concreto_3000', concrete);
@@ -86,9 +99,8 @@
     $('c_result').textContent = Calc.fmtNum(concrete);
     $('f_result').textContent = Calc.fmtNum(footing);
 
-    // auto-fill area unless user typed a custom one
-    const areaInput = $('area_sqft');
-    if (!areaInput.dataset.touched) areaInput.value = area ? Calc.round2(area) : '';
+    // auto-fill area from L×W only when not in "only area" mode and not user-edited
+    if (!on && !areaInput.dataset.touched) areaInput.value = lwArea ? Calc.round2(lwArea) : '';
   }
 
   function setEst(key, val) {
@@ -141,9 +153,14 @@
     const pricePerSqft = Calc.num($('price_sqft').value);
     const sqftTotal = Calc.sqftPrice(area, pricePerSqft);
     const materialsTotal = materials.reduce((s, m) => s + m.total, 0);
+    const areaOnly = isAreaOnly();
+    const concreteCuyd = areaOnly
+      ? Calc.concreteCuYdFromArea(area, $('c_depth').value)
+      : Calc.concreteCuYd($('c_length').value, $('c_width').value, $('c_depth').value);
     return {
+      areaOnly,
       concrete: { length: $('c_length').value, width: $('c_width').value, depth: $('c_depth').value,
-                  cuyd: Calc.round2(Calc.concreteCuYd($('c_length').value, $('c_width').value, $('c_depth').value)) },
+                  cuyd: Calc.round2(concreteCuyd) },
       footing: { length: $('f_length').value, width: $('f_width').value, depth: $('f_depth').value,
                  cuyd: Calc.round2(Calc.footingCuYd($('f_length').value, $('f_width').value, $('f_depth').value)) },
       area, pricePerSqft,
@@ -158,6 +175,8 @@
     ['c_length','c_width','c_depth','f_length','f_width','f_depth','area_sqft',
      'q_title','q_name','q_phone','q_address','q_email'].forEach((id) => { const el = $(id); if (el) el.value = ''; });
     $('area_sqft').dataset.touched = '';
+    const cb = $('areaOnly'); if (cb) cb.checked = false;
+    applyAreaOnly();
     Object.keys(state).forEach((id) => { state[id].qty = 0; });
     currentQuoteId = null;
     renderMaterials();
@@ -207,8 +226,10 @@
     $('f_width').value = foo.width || '';
     $('f_depth').value = foo.depth || '';
     $('area_sqft').value = c.area != null ? c.area : '';
-    $('area_sqft').dataset.touched = c.area ? '1' : '';
+    $('area_sqft').dataset.touched = (c.area || c.areaOnly) ? '1' : '';
     if (c.pricePerSqft != null) $('price_sqft').value = c.pricePerSqft;
+    const cb = $('areaOnly'); if (cb) cb.checked = !!c.areaOnly;
+    applyAreaOnly();
 
     Object.keys(state).forEach((id) => { state[id].qty = 0; });
     (c.materials || []).forEach((m) => {
@@ -241,6 +262,12 @@
     ['c_length','c_width','c_depth','f_length','f_width','f_depth','price_sqft','rebarSpacing']
       .forEach((id) => $(id).addEventListener('input', recompute));
     $('area_sqft').addEventListener('input', (e) => { e.target.dataset.touched = '1'; recompute(); });
+    $('areaOnly').addEventListener('change', () => {
+      applyAreaOnly();
+      // checking → area is manual; unchecking → resume auto from L×W
+      $('area_sqft').dataset.touched = isAreaOnly() ? '1' : '';
+      recompute();
+    });
     $('resetQuoteBtn').addEventListener('click', reset);
     $('saveQuoteBtn').addEventListener('click', saveQuote);
 

@@ -113,6 +113,13 @@ body.modal-open { overflow: hidden; }
 .field--inline > span { flex: 1; }
 .field--inline input { width: 90px; }
 
+/* "only area" checkbox + behaviour */
+.check { display: flex; align-items: center; gap: 9px; margin: 0 0 12px; cursor: pointer; font-weight: 600; font-size: .9rem; }
+.check input { width: 18px; height: 18px; min-width: 18px; accent-color: var(--red); margin: 0; }
+.is-area-only .field--lw { display: none; }
+.is-area-only #concreteCard .grid3 { grid-template-columns: 1fr; }
+.is-area-only #area_sqft + .field__note { display: none; }
+
 input, select, textarea {
   width: 100%;
   min-width: 0;               /* allow shrinking inside grid/flex tracks */

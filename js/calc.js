@@ -11,6 +11,12 @@
       return (num(lengthFt) * num(widthFt) * (num(depthIn) / 12)) / 27;
     },
 
+    /* Concrete cubic yards from a known area: (area_ft2 * (D_in/12)) / 27.
+       Used when the customer only gave the area + thickness (no length/width). */
+    concreteCuYdFromArea(areaSqFt, depthIn) {
+      return (num(areaSqFt) * (num(depthIn) / 12)) / 27;
+    },
+
     /* Footing cubic yards: length in ft, width & depth in inches.
        (L_ft * (W_in/12) * (D_in/12)) / 27 */
     footingCuYd(lengthFt, widthIn, depthIn) {
