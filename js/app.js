@@ -84,18 +84,7 @@
 
     const syncBtn = $('syncNowBtn');
     if (syncBtn) {
-      // tap = sync data · hold ~1.5s = force-update the app code
-      let pressTimer = null, didLongPress = false;
-      const startPress = () => {
-        didLongPress = false;
-        pressTimer = setTimeout(() => { didLongPress = true; forceUpdate(); }, 1500);
-      };
-      const cancelPress = () => clearTimeout(pressTimer);
-      syncBtn.addEventListener('pointerdown', startPress);
-      ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => syncBtn.addEventListener(ev, cancelPress));
-
-      syncBtn.addEventListener('click', async () => {
-        if (didLongPress) { didLongPress = false; return; }   // the hold already handled it
+      async function doSync() {
         if (!window.Cloud || !Cloud.isEnabled()) { toast(I18n.t('sign_need_online')); return; }
         if (!Cloud.isOnline()) { toast(I18n.t('sync_offline')); return; }
         syncBtn.disabled = true;
@@ -103,6 +92,14 @@
         try { await Cloud.syncNow(); toast(I18n.t('sync_ok')); }
         catch (e) { toast(I18n.t('sync_offline')); }
         finally { syncBtn.disabled = false; }
+      }
+      // single tap = sync data · triple-click = force-update the app code
+      let clicks = 0, clickTimer = null;
+      syncBtn.addEventListener('click', () => {
+        clicks++;
+        clearTimeout(clickTimer);
+        if (clicks >= 3) { clicks = 0; forceUpdate(); return; }
+        clickTimer = setTimeout(() => { clicks = 0; doSync(); }, 500);
       });
     }
 
