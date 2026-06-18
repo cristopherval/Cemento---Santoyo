@@ -395,7 +395,7 @@
   const MATERIAL_NAMES = {
     es: {
       varilla_3: 'Varilla #3', varilla_4: 'Varilla #4', varilla_5: 'Varilla #5',
-      varilla_fundacion: 'Varilla de fundación',
+      varilla_fundacion: 'Stirrups',
       concreto_3000: 'Concreto 3000', psi_concreto: 'PSI Concreto',
       pumping_master: 'Pumping Master', footing: 'Footing',
       mini_excavadora: 'Mini-Excavadora', pulidora: 'Pulidora', bobcat: 'Bobcat',
@@ -407,7 +407,7 @@
     },
     en: {
       varilla_3: 'Rebar #3', varilla_4: 'Rebar #4', varilla_5: 'Rebar #5',
-      varilla_fundacion: 'Foundation Rebar',
+      varilla_fundacion: 'Stirrups',
       concreto_3000: 'Concrete 3000', psi_concreto: 'PSI Concrete',
       pumping_master: 'Pumping Master', footing: 'Footing',
       mini_excavadora: 'Mini-Excavator', pulidora: 'Power Trowel', bobcat: 'Bobcat',
