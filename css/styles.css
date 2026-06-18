@@ -265,6 +265,12 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; marg
 .drawer__sep { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
 .drawer__backup { display: flex; flex-direction: column; gap: 8px; }
 .hint-small { display: block; font-size: .72rem; color: var(--text-dim); text-align: center; margin: 6px 0 2px; }
+
+/* buttons must never select text / show the callout on long-press (mobile) */
+.btn, .bottomnav__btn, .iconbtn, button {
+  -webkit-user-select: none; -moz-user-select: none; user-select: none;
+  -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+}
 .drawer__company { font-size: .82rem; color: var(--text-dim); line-height: 1.6; margin-bottom: 16px; }
 
 /* ===================== MODAL (invoice preview) ===================== */
