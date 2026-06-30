@@ -235,10 +235,11 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; marg
   height: calc(var(--nav-h) + env(safe-area-inset-bottom));
 }
 .bottomnav__btn {
-  flex: 1; background: none; border: none; cursor: pointer;
+  flex: 1; min-width: 0; background: none; border: none; cursor: pointer;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-  color: #8a8a92; font-size: .68rem; font-weight: 600;
+  color: #8a8a92; font-size: .62rem; font-weight: 600; padding: 0 2px;
 }
+.bottomnav__btn span { line-height: 1.05; text-align: center; }
 .bottomnav__btn.is-active { color: var(--red); }
 .bottomnav__btn.is-active svg { filter: drop-shadow(0 0 6px var(--red-soft)); }
 /* hidden while the mobile keyboard is open (an input is focused) so it doesn't

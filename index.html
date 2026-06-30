@@ -281,6 +281,18 @@
         <div id="financeList"></div>
       </div>
     </section>
+
+    <!-- ---------- STORAGE VIEW (uploaded PDFs in Supabase) ---------- -->
+    <section class="view" id="view-storage">
+      <div class="card">
+        <h2 class="card__title" data-i18n="storage_title">Almacenamiento</h2>
+        <p class="card__hint" data-i18n="storage_hint">Sube y guarda PDFs (invoices, recibos) en la nube.</p>
+        <button class="btn btn--primary btn--block" id="uploadFileBtn" data-i18n="upload_pdf">Subir PDF</button>
+        <input type="file" id="fileInput" accept="application/pdf,image/*" multiple hidden />
+        <p class="muted" id="storageMsg" hidden></p>
+        <div id="filesList"></div>
+      </div>
+    </section>
   </main>
 
   <!-- ===================== BOTTOM NAV ===================== -->
@@ -296,6 +308,10 @@
     <button class="bottomnav__btn" data-view="view-finance">
       <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M5 3h14a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm2 3v3h10V6H7zm0 5v2h3v-2H7zm5 0v2h3v-2h-3zM7 15v2h3v-2H7zm5 0v4h3v-4h-3z"/></svg>
       <span data-i18n="nav_finance">Finanzas</span>
+    </button>
+    <button class="bottomnav__btn" data-view="view-storage">
+      <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M4 4h16a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm1 7h14v8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-8zm4 2v2h6v-2H9z"/></svg>
+      <span data-i18n="nav_storage">Almacenamiento</span>
     </button>
   </nav>
 
@@ -483,6 +499,7 @@
   <script src="js/quotes.js" defer></script>
   <script src="js/finance.js" defer></script>
   <script src="js/cloud.js" defer></script>
+  <script src="js/vault.js" defer></script>
   <script src="js/app.js" defer></script>
 </body>
 </html>

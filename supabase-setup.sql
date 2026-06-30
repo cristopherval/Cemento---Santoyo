@@ -106,3 +106,15 @@ revoke execute on function public.get_invoice_for_signing(text, text) from publi
 revoke execute on function public.submit_signature(text, text, text) from public;
 grant  execute on function public.get_invoice_for_signing(text, text) to anon, authenticated;
 grant  execute on function public.submit_signature(text, text, text)  to anon, authenticated;
+
+-- ---------- Almacenamiento de archivos (pestaña "Almacenamiento") ----------
+-- Bucket privado para PDFs/imágenes subidos. Solo usuarios autenticados pueden
+-- subir/ver/borrar; el rol anónimo no tiene acceso.
+insert into storage.buckets (id, name, public)
+  values ('invoices', 'invoices', false)
+  on conflict (id) do nothing;
+
+drop policy if exists invoices_auth_all on storage.objects;
+create policy invoices_auth_all on storage.objects
+  for all to authenticated
+  using (bucket_id = 'invoices') with check (bucket_id = 'invoices');
