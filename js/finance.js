@@ -238,7 +238,7 @@
     document.querySelectorAll('[data-close-job]').forEach((el) =>
       el.addEventListener('click', () => App.closeModal('jobEditModal')));
 
-    st.month = Filters.currentMonth();    // default to the current month
+    st.month = Filters.defaultMonth(Storage.getJobs(), getDate);   // current month if it has jobs, else all
     const search = $('finSearch');
     if (search) {
       search.placeholder = I18n.t('search_ph');

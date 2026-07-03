@@ -172,8 +172,15 @@
   function bindKeyboardNav() {
     const nav = document.querySelector('.bottomnav');
     if (!nav) return;
-    const isField = (el) => el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)
-      && el.type !== 'button' && el.type !== 'submit' && el.type !== 'checkbox' && el.type !== 'radio';
+    // Only text-entry fields open the on-screen keyboard. Selects/date/file pickers
+    // use native overlays (no keyboard), so they must NOT hide the bottom nav.
+    const TEXT_TYPES = ['text', 'search', 'email', 'tel', 'url', 'number', 'password'];
+    const isField = (el) => {
+      if (!el) return false;
+      if (el.tagName === 'TEXTAREA') return true;
+      if (el.tagName === 'INPUT') return TEXT_TYPES.indexOf((el.type || 'text').toLowerCase()) >= 0;
+      return false;
+    };
     document.addEventListener('focusin', (e) => { if (isField(e.target)) nav.classList.add('bottomnav--hidden'); });
     document.addEventListener('focusout', () => {
       setTimeout(() => { if (!isField(document.activeElement)) nav.classList.remove('bottomnav--hidden'); }, 120);

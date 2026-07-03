@@ -12,6 +12,11 @@
 
   function currentMonth() { const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1); }
   function monthKey(dateStr) { return (dateStr || '').slice(0, 7); }
+  // default filter: current month if it has records, otherwise show all
+  function defaultMonth(items, getDate) {
+    const cur = currentMonth();
+    return (items || []).some((i) => monthKey(getDate(i)) === cur) ? cur : 'all';
+  }
   function monthLabel(key) {
     const [y, m] = key.split('-');
     return months()[(+m || 1) - 1] ? months()[(+m || 1) - 1] + ' ' + y : key;
@@ -62,5 +67,5 @@
     return Object.values(map).sort((a, b) => b.key.localeCompare(a.key));
   }
 
-  global.Filters = { currentMonth, monthKey, monthLabel, weekKey, weekLabel, monthOptionsHTML, apply, groupByWeek };
+  global.Filters = { currentMonth, defaultMonth, monthKey, monthLabel, weekKey, weekLabel, monthOptionsHTML, apply, groupByWeek };
 })(window);

@@ -98,7 +98,7 @@
   }
 
   function init() {
-    st.month = Filters.currentMonth();
+    st.month = Filters.defaultMonth(Storage.getQuotes(), getDate);
     const search = $('quoteSearch');
     if (search) {
       search.placeholder = I18n.t('search_ph');
