@@ -117,8 +117,30 @@ body.modal-open { overflow: hidden; }
 .check { display: flex; align-items: center; gap: 9px; margin: 0 0 12px; cursor: pointer; font-weight: 600; font-size: .9rem; }
 .check input { width: 18px; height: 18px; min-width: 18px; accent-color: var(--red); margin: 0; }
 .is-area-only .field--lw { display: none; }
-.is-area-only #concreteCard .grid3 { grid-template-columns: 1fr; }
-.is-area-only #area_sqft + .field__note { display: none; }
+/* the area field replaces Length & Width on sector 1 only */
+.field--area { display: none; }
+.is-area-only .field--area { display: flex; }
+.is-area-only #mainSector .grid3 { grid-template-columns: 1fr 1fr; }
+
+/* ---- concrete sectors (one job can have several slabs) ---- */
+.sector { margin-bottom: 12px; }
+.sector--extra {
+  background: var(--surface-2); border: 1px dashed var(--border);
+  border-radius: var(--radius-sm); padding: 10px 10px 4px;
+}
+.sector__head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.sector__label {
+  font-size: .74rem; font-weight: 700; letter-spacing: .5px;
+  text-transform: uppercase; color: var(--text-dim);
+}
+.sector__cuyd { margin-left: auto; font-size: .95rem; font-weight: 700; }
+.sector__cuyd::after { content: " yd³"; font-size: .7rem; font-weight: 600; color: var(--text-dim); }
+.sector__del {
+  background: transparent; border: 1px solid var(--border); color: var(--red);
+  border-radius: var(--radius-sm); width: 30px; height: 30px; padding: 0;
+  font-size: .8rem; line-height: 1; cursor: pointer;
+}
+#addSectorBtn { margin-bottom: 14px; }
 
 input, select, textarea {
   width: 100%;
@@ -548,6 +570,7 @@ img { max-width: 100%; height: auto; }
 /* ===================== RESPONSIVE ===================== */
 @media (max-width: 380px) {
   .grid3 { grid-template-columns: 1fr; }
+  .is-area-only #mainSector .grid3 { grid-template-columns: 1fr; }
   .mrow__name { font-size: .76rem; }
   .modal__actions .btn { padding: 8px 10px; }
   /* stack action button rows so nothing gets squeezed on tiny phones */

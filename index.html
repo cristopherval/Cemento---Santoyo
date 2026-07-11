@@ -46,27 +46,43 @@
     <!-- ---------- CALCULATOR / QUOTE VIEW ---------- -->
     <section class="view view--active" id="view-calc">
 
-      <!-- Concrete dimensions -->
+      <!-- Concrete dimensions (sector 1 + optional extra sectors) -->
       <div class="card" id="concreteCard">
         <h2 class="card__title" data-i18n="concrete_title">Concreto (Yardas Cúbicas)</h2>
         <label class="check">
           <input type="checkbox" id="areaOnly" />
           <span data-i18n="area_only">Solo tengo el área (sin largo y ancho)</span>
         </label>
-        <div class="grid3">
-          <label class="field field--lw">
-            <span data-i18n="length_ft">Largo (ft)</span>
-            <input type="number" inputmode="decimal" id="c_length" min="0" step="0.01" placeholder="0" />
-          </label>
-          <label class="field field--lw">
-            <span data-i18n="width_ft">Ancho (ft)</span>
-            <input type="number" inputmode="decimal" id="c_width" min="0" step="0.01" placeholder="0" />
-          </label>
-          <label class="field">
-            <span data-i18n="depth_in">Grosor (in)</span>
-            <input type="number" inputmode="decimal" id="c_depth" min="0" step="0.01" placeholder="0" />
-          </label>
+
+        <div class="sector" id="mainSector">
+          <div class="sector__head">
+            <span class="sector__label"><span data-i18n="sector">Sector</span> 1</span>
+            <strong class="sector__cuyd" id="c_cuyd">0.00</strong>
+          </div>
+          <div class="grid3">
+            <label class="field field--lw">
+              <span data-i18n="length_ft">Largo (ft)</span>
+              <input type="number" inputmode="decimal" id="c_length" min="0" step="0.01" placeholder="0" />
+            </label>
+            <label class="field field--lw">
+              <span data-i18n="width_ft">Ancho (ft)</span>
+              <input type="number" inputmode="decimal" id="c_width" min="0" step="0.01" placeholder="0" />
+            </label>
+            <label class="field field--area">
+              <span data-i18n="area_sqft">Área (Sq.Ft.)</span>
+              <input type="number" inputmode="decimal" id="c_area" min="0" step="0.01" placeholder="0" />
+            </label>
+            <label class="field">
+              <span data-i18n="depth_in">Grosor (in)</span>
+              <input type="number" inputmode="decimal" id="c_depth" min="0" step="0.01" placeholder="0" />
+            </label>
+          </div>
         </div>
+
+        <div id="extraSectors"><!-- filled by JS --></div>
+
+        <button type="button" class="btn btn--ghost btn--sm btn--block" id="addSectorBtn" data-i18n="add_sector">+ Agregar sector</button>
+
         <div class="result">
           <span data-i18n="total_cuyd">Total Yardas Cúbicas</span>
           <strong id="c_result">0.00</strong>
