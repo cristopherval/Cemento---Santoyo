@@ -459,6 +459,21 @@
     </div>
   </div>
 
+  <!-- ===================== CONFIRM DIALOG (themed) ===================== -->
+  <div class="dialog" id="confirmDialog" hidden>
+    <div class="dialog__backdrop" data-confirm-cancel></div>
+    <div class="dialog__panel" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle">
+      <h2 id="confirmTitle"></h2>
+      <p id="confirmMsg"></p>
+      <div class="confirm-phrase" id="confirmPhraseWrap" hidden>
+        <small id="confirmPhraseHint"></small>
+        <input type="text" id="confirmPhrase" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+      </div>
+      <button class="btn btn--primary btn--block" id="confirmOk">OK</button>
+      <button class="dialog__cancel" data-confirm-cancel id="confirmCancel">Cancelar</button>
+    </div>
+  </div>
+
   <!-- ===================== AUTH GATE (login) ===================== -->
   <div class="authgate" id="authGate" hidden>
     <form class="authgate__card" id="authForm">

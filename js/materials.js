@@ -258,6 +258,26 @@
     recompute();
   }
 
+  // Is there anything worth warning about before clearing the form?
+  function isDirty() {
+    if (currentQuoteId) return true;                 // editing a saved quote
+    if (sectors.length) return true;                 // extra sectors added
+    const filled = ['c_length','c_width','c_depth','c_area','f_length','f_width','f_depth',
+      'area_sqft','q_title','q_name','q_phone','q_address','q_email']
+      .some((id) => { const el = $(id); return el && String(el.value).trim() !== ''; });
+    if (filled) return true;
+    return Object.keys(state).some((id) => Calc.num(state[id].qty) > 0);
+  }
+
+  // "Limpiar" button: confirm first if the form has unsaved data.
+  async function requestReset() {
+    if (isDirty() && window.App && App.confirm) {
+      const ok = await App.confirm({ title: I18n.t('reset'), message: I18n.t('confirm_reset') });
+      if (!ok) return;
+    }
+    reset();
+  }
+
   /* ---------- Quote persistence (Cotizaciones) ---------- */
   function saveQuote() {
     const calc = getState();
@@ -282,11 +302,24 @@
     };
     Storage.saveQuote(rec);
     currentQuoteId = rec.id;
+    syncCustomerToInvoice(rec);
     if (global.Quotes) Quotes.renderList();
     if (global.Finance) Finance.render();
     App.toast(I18n.t('quote_saved'));
+    reset();                    // ya quedó guardada → dejar el formulario en blanco
     App.showView('view-quotes');
     return rec;
+  }
+
+  // Customer data is shared with the quote's invoice (if it already generated one).
+  // Push the quote's customer onto that invoice so both stay in sync — last save wins.
+  function syncCustomerToInvoice(quote) {
+    if (!quote.invoiceId) return;
+    const inv = Storage.getHistory().find((r) => r.id === quote.invoiceId);
+    if (!inv) return;
+    inv.customer = Object.assign({}, quote.customer);
+    Storage.saveRecord(inv);
+    if (global.Invoice) { Invoice.renderHistory(); if (Invoice.refreshOpen) Invoice.refreshOpen(); }
   }
 
   // Reload a saved quote back into the calculator for editing.
@@ -374,7 +407,7 @@
       recompute();
     });
 
-    $('resetQuoteBtn').addEventListener('click', reset);
+    $('resetQuoteBtn').addEventListener('click', requestReset);
     $('saveQuoteBtn').addEventListener('click', saveQuote);
 
     // re-render labels on language change

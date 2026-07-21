@@ -16,7 +16,26 @@
   const getDate = (q) => q.date;
   function getText(q) {
     const cu = q.customer || {};
-    return [q.title, cu.name, cu.phone, cu.address, cu.email].filter(Boolean).join(' ');
+    return [q.title, cu.name, cu.phone, cu.address, cu.email, dateTokens(q.date)]
+      .filter(Boolean).join(' ');
+  }
+
+  // Make a date searchable in the formats people actually type: ISO, M/D/Y,
+  // D/M/Y, day/month with and without leading zeros, the year alone, and the
+  // month name in the active language (e.g. "Julio 2026" → matches "julio").
+  function dateTokens(iso) {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-');
+    if (!d) return iso;
+    const mm = +m, dd = +d, pad = (n) => (n < 10 ? '0' + n : '' + n);
+    const toks = [
+      iso, y,
+      `${mm}/${dd}/${y}`, `${dd}/${mm}/${y}`,
+      `${mm}/${dd}`, `${dd}/${mm}`,
+      `${pad(mm)}/${pad(dd)}`, `${pad(dd)}/${pad(mm)}`
+    ];
+    if (global.Filters && Filters.monthLabel) toks.push(Filters.monthLabel(`${y}-${m}`));
+    return toks.join(' ');
   }
 
   function itemHTML(q) {
@@ -80,8 +99,9 @@
       const rec = Storage.getQuote(b.dataset.confirm);
       if (rec) Finance.confirmFromQuote(rec);
     }));
-    wrap.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', () => {
-      if (confirm(I18n.t('confirm_del_quote'))) { Storage.deleteQuote(b.dataset.del); renderList(); }
+    wrap.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', async () => {
+      const ok = await App.confirm({ title: I18n.t('delete'), message: I18n.t('confirm_del_quote') });
+      if (ok) { Storage.deleteQuote(b.dataset.del); renderList(); }
     }));
   }
 

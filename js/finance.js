@@ -197,9 +197,9 @@
     App.toast(I18n.t('saved'));
   }
 
-  function deleteEdit() {
+  async function deleteEdit() {
     if (!editId) return;
-    if (!confirm(I18n.t('confirm_del_job'))) return;
+    if (!await App.confirm({ title: I18n.t('delete'), message: I18n.t('confirm_del_job') })) return;
     const job = Storage.getJobs().find((j) => j.id === editId);
     Storage.deleteJob(editId);
     // unlink the quote so it can be confirmed again later

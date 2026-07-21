@@ -45,7 +45,7 @@
       catch (e) { App.toast('Error: ' + (e.message || e)); }
     }));
     wrap.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', async () => {
-      if (!confirm(I18n.t('confirm_del_file'))) return;
+      if (!await App.confirm({ title: I18n.t('delete'), message: I18n.t('confirm_del_file') })) return;
       try { await Cloud.deleteFile(decodeURIComponent(b.dataset.del)); refresh(); App.toast(I18n.t('saved')); }
       catch (e) { App.toast('Error: ' + (e.message || e)); }
     }));

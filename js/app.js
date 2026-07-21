@@ -48,6 +48,52 @@
     toastTimer = setTimeout(() => { t.classList.remove('is-show'); setTimeout(() => (t.hidden = true), 250); }, 2200);
   }
 
+  /* ---------- Themed confirm dialog (replaces the native confirm/prompt) ----------
+     Usage:  const ok = await App.confirm({ title, message, confirmText, cancelText,
+                                            requirePhrase, phraseHint });
+     Returns a Promise<boolean>. If requirePhrase is set, the OK button stays
+     disabled until the user types that exact phrase (used by "Borrar historial"). */
+  let confirmResolver = null;
+  function askConfirm(opts) {
+    opts = opts || {};
+    return new Promise((resolve) => {
+      // if another confirm is somehow open, resolve it as cancelled first
+      if (confirmResolver) { const r = confirmResolver; confirmResolver = null; r(false); }
+      confirmResolver = resolve;
+
+      const titleEl = $('confirmTitle');
+      titleEl.textContent = opts.title || '';
+      titleEl.hidden = !opts.title;
+      $('confirmMsg').textContent = opts.message || '';
+
+      const ok = $('confirmOk');
+      ok.textContent = opts.confirmText || I18n.t('delete');
+      $('confirmCancel').textContent = opts.cancelText || I18n.t('cancel');
+
+      const phrase = opts.requirePhrase || '';
+      const wrap = $('confirmPhraseWrap');
+      const input = $('confirmPhrase');
+      wrap.hidden = !phrase;
+      $('confirmPhraseHint').textContent = phrase ? (opts.phraseHint || '') : '';
+      input.value = '';
+      input.placeholder = phrase || '';
+      ok.disabled = !!phrase;                       // must type the phrase to enable
+      input.oninput = phrase
+        ? () => { ok.disabled = input.value.trim().toUpperCase() !== phrase.toUpperCase(); }
+        : null;
+
+      $('confirmDialog').hidden = false;
+      document.body.classList.add('modal-open');
+      setTimeout(() => (phrase ? input : ok).focus(), 30);
+    });
+  }
+  function closeConfirm(result) {
+    $('confirmDialog').hidden = true;
+    document.body.classList.remove('modal-open');
+    const r = confirmResolver; confirmResolver = null;
+    if (r) r(result);
+  }
+
   /* ---------- Wire events ---------- */
   function bind() {
     document.querySelectorAll('.bottomnav__btn').forEach((b) =>
@@ -63,17 +109,25 @@
     document.querySelectorAll('#themeToggle button').forEach((b) =>
       b.addEventListener('click', () => setTheme(b.dataset.theme)));
 
-    $('clearDataBtn').addEventListener('click', () => {
-      // Step 1: confirm
-      if (!confirm(I18n.t('confirm_clear'))) return;
-      // Step 2: require typing the exact phrase
+    // themed confirm dialog buttons
+    $('confirmOk').addEventListener('click', () => closeConfirm(true));
+    document.querySelectorAll('[data-confirm-cancel]').forEach((el) =>
+      el.addEventListener('click', () => closeConfirm(false)));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !$('confirmDialog').hidden) closeConfirm(false);
+    });
+
+    $('clearDataBtn').addEventListener('click', async () => {
+      // one themed dialog: message + a field that requires typing the exact phrase
       const phrase = I18n.t('delete_all_phrase');
-      const typed = prompt(I18n.t('confirm_clear_type').replace('{phrase}', phrase));
-      if (typed == null) return;                                   // cancelled
-      if (typed.trim().toUpperCase() !== phrase.toUpperCase()) {   // wrong text
-        toast(I18n.t('clear_cancelled'));
-        return;
-      }
+      const ok = await askConfirm({
+        title: I18n.t('clear_data'),
+        message: I18n.t('confirm_clear'),
+        phraseHint: I18n.t('confirm_clear_type').replace('{phrase}', phrase),
+        requirePhrase: phrase,
+        confirmText: I18n.t('clear_data')
+      });
+      if (!ok) return;
       Storage.clearHistory(); Storage.clearQuotes(); Storage.clearJobs();
       if (window.Quotes) Quotes.renderList();
       if (window.Finance) Finance.render();
@@ -113,7 +167,7 @@
 
   /* ---------- Force-update the app code (clear caches + reload latest) ---------- */
   async function forceUpdate() {
-    if (!confirm(I18n.t('confirm_update'))) return;
+    if (!await askConfirm({ message: I18n.t('confirm_update'), confirmText: I18n.t('sync_now') })) return;
     toast(I18n.t('updating'));
     try {
       if ('caches' in window) {
@@ -146,11 +200,11 @@
     e.target.value = '';            // allow re-selecting the same file later
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       let obj;
       try { obj = JSON.parse(reader.result); } catch (_) { toast(I18n.t('restore_error')); return; }
       if (!obj || obj.app !== 'santoyo') { toast(I18n.t('restore_error')); return; }
-      if (!confirm(I18n.t('confirm_restore'))) return;
+      if (!await askConfirm({ message: I18n.t('confirm_restore'), confirmText: I18n.t('import_backup') })) return;
       if (!Storage.importAll(obj)) { toast(I18n.t('restore_error')); return; }
       refreshAll();
       // push the restored data up to the cloud (if signed in)
@@ -231,6 +285,7 @@
 
   global.App = {
     init, showView, openModal, closeModal, toast, refreshAll,
+    confirm: askConfirm,
     refreshHistory: () => Invoice.renderHistory()
   };
 

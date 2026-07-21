@@ -134,11 +134,14 @@
   }
 
   // Link a saved invoice back to its quote and advance the quote status.
+  // The customer data is shared between the quote and its invoice, so push the
+  // invoice's customer onto the quote (bidirectional sync — last save wins).
   function linkInvoiceToQuote(rec) {
     if (!linkedQuoteId) return;
     const q = Storage.getQuote(linkedQuoteId);
     if (!q) return;
     q.invoiceId = rec.id;
+    q.customer = Object.assign({}, rec.customer);
     if (q.status === 'pendiente') q.status = 'aceptada';
     Storage.saveQuote(q);
     if (global.Quotes) Quotes.renderList();
@@ -431,9 +434,9 @@
 
   // Wipe the customer signature so a wrong/bad one can be re-collected:
   // re-send the link or print for a physical signature.
-  function clearCustomerSignature() {
+  async function clearCustomerSignature() {
     if (!currentRecord || !currentRecord.customerSignature) return;
-    if (!confirm(I18n.t('confirm_clear_sign'))) return;
+    if (!await App.confirm({ title: I18n.t('clear_cust_sign'), message: I18n.t('confirm_clear_sign') })) return;
     currentRecord.customerSignature = '';
     currentRecord.signStatus = null;
     currentRecord.signedAt = null;
