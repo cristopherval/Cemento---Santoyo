@@ -17,9 +17,7 @@
         { id: 'concreto_3000', price: 190.00 },
         { id: 'concreto_3500', price: 200.00 },
         { id: 'concreto_4000', price: 210.00 },
-        { id: 'psi_concreto', price: 170.00 },
-        { id: 'pumping_master', price: 1500.00 },
-        { id: 'footing', price: 165.00 }
+        { id: 'pumping_master', price: 1500.00 }
       ]
     },
     {
@@ -51,9 +49,23 @@
       id: 'otros',
       items: [
         { id: 'poly_vapor', price: 85.00 },
+        { id: 'plastic_chairs', price: 0.50 },
         { id: 'diesel', price: 3.20 }
       ]
     }
+  ];
+
+  /* Checklist that feeds the invoice "Description" field — names only, exactly
+     as they must appear on the invoice (no quantities, no prices). */
+  const DESC_ITEMS = [
+    '3/8 rebar',
+    '5/8 rebar',
+    '3000 psi concrete',
+    '3500 psi concrete',
+    '4000 psi concrete',
+    'Poly Vapor 6000',
+    'Stirrups',
+    'Plastic Chairs'
   ];
 
   const COMPANY = {
@@ -71,5 +83,5 @@
     'On the day work begins, half of the total amount is required as a down payment, the rest of the payment will be given once it is finished.'
   ];
 
-  global.AppData = { MATERIAL_GROUPS, COMPANY, INVOICE_NOTES };
+  global.AppData = { MATERIAL_GROUPS, DESC_ITEMS, COMPANY, INVOICE_NOTES };
 })(window);

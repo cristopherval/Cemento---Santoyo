@@ -83,6 +83,50 @@
     App.refreshHistory();
   }
 
+  /* ---------- Description checklist (fills the Description live) ---------- */
+  function renderDescChecklist() {
+    const wrap = $('descChecklist');
+    if (!wrap) return;
+    wrap.innerHTML = (AppData.DESC_ITEMS || []).map((label, i) =>
+      `<label class="check"><input type="checkbox" data-desc-i="${i}" /><span>${escapeHtml(label)}</span></label>`
+    ).join('');
+    wrap.querySelectorAll('input[data-desc-i]').forEach((c) =>
+      c.addEventListener('change', syncDescFromChecklist));
+  }
+
+  // Fixed divider between the hand-typed text and the checklist items.
+  const DESC_SEP = '------------------------';
+
+  // Rebuild the description: hand-typed text on top, the divider, then the
+  // checked items. The checklist block is regenerated from the checkboxes, so
+  // deleting those lines by hand does nothing — they only go away by unticking.
+  function syncDescFromChecklist() {
+    const ta = $('inv_desc'), wrap = $('descChecklist');
+    if (!ta || !wrap) return;
+    const all = AppData.DESC_ITEMS || [];
+    const checked = Array.prototype.slice.call(wrap.querySelectorAll('input[data-desc-i]'))
+      .filter((c) => c.checked).map((c) => all[+c.dataset.descI]);
+    // anything that isn't the divider or a checklist item is the user's own text
+    const custom = (ta.value || '').split('\n')
+      .filter((l) => l.trim() !== DESC_SEP && all.indexOf(l.trim()) < 0);
+    while (custom.length && custom[custom.length - 1].trim() === '') custom.pop();
+    const next = checked.length ? custom.concat([DESC_SEP], checked) : custom;
+    const value = next.join('\n');
+    if (ta.value !== value) ta.value = value;   // don't touch the caret if nothing changed
+    scheduleBuild();
+  }
+
+  // Tick the boxes for items already present in the description text.
+  function syncChecklistFromDesc() {
+    const ta = $('inv_desc'), wrap = $('descChecklist');
+    if (!ta || !wrap) return;
+    const all = AppData.DESC_ITEMS || [];
+    const lines = (ta.value || '').split('\n').map((l) => l.trim());
+    wrap.querySelectorAll('input[data-desc-i]').forEach((c) => {
+      c.checked = lines.indexOf(all[+c.dataset.descI]) >= 0;
+    });
+  }
+
   /* ---------- Totals ---------- */
   function recompute() {
     const total = Calc.num($('inv_total_input').value);
@@ -103,6 +147,7 @@
      'inv_total_input', 'inv_paid'].forEach((id) => { $(id).value = ''; });
     $('inv_date').value = todayISO();
     recompute();
+    syncChecklistFromDesc();
     showSignStatus(null);
   }
 
@@ -124,6 +169,7 @@
     $('inv_address').value = cust.address || '';
     $('inv_email').value = cust.email || '';
     $('inv_desc').value = quote.title || '';
+    syncChecklistFromDesc();
     $('inv_total_input').value = quote.calc && quote.calc.sqftTotal ? quote.calc.sqftTotal : '';
     $('inv_paid').value = '';
     $('inv_date').value = todayISO();
@@ -149,6 +195,7 @@
 
   /* ---------- Build a record from the form ---------- */
   function buildRecord(number) {
+    syncDescFromChecklist();   // make sure the saved description keeps the checklist block
     const t = recompute();
     return {
       id: currentRecord ? currentRecord.id : 'inv_' + makeId(),
@@ -296,6 +343,7 @@
     $('inv_paid').value = rec.paid || '';
     $('inv_date').value = rec.date || todayISO();
     recompute();
+    syncChecklistFromDesc();
     showSignStatus(rec);
     // Land on the editable form (not the read-only preview) so a saved/signed
     // invoice can still be edited. Preview/print/share are one tap away.
@@ -597,6 +645,9 @@
 
   function init() {
     $('inv_date').value = todayISO();
+    renderDescChecklist();
+    // restore the protected block if the user edited/deleted it by hand
+    $('inv_desc').addEventListener('blur', syncDescFromChecklist);
     $('inv_total_input').addEventListener('input', recompute);
     $('inv_paid').addEventListener('input', recompute);
     $('previewInvoiceBtn').addEventListener('click', requestPreview);

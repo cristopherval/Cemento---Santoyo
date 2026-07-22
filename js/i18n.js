@@ -23,6 +23,8 @@
       sqft_total: 'Precio Sq.Ft.',
       materials_title: 'Materiales (Cotización)',
       materials_hint: 'Modifica solo la cantidad. Puedes ajustar precios unitarios.',
+      desc_items_title: 'Incluir en la descripción',
+      desc_items_hint: 'Se quitan solo desmarcando la casilla.',
       totals_title: 'Totales',
       materials_total: 'Precio Materiales',
       profit: 'Ganancia',
@@ -231,6 +233,8 @@
       sqft_total: 'Sq.Ft. Price',
       materials_title: 'Materials (Quote)',
       materials_hint: 'Just change the quantity. You can adjust unit prices.',
+      desc_items_title: 'Include in description',
+      desc_items_hint: 'They are removed only by unchecking the box.',
       totals_title: 'Totals',
       materials_total: 'Materials Price',
       profit: 'Profit',
@@ -432,7 +436,7 @@
       labor: 'Labor', master_finisher: 'Master Finisher',
       wood_2x4: 'Wood 2x4', wood_2x6: 'Wood 2x6',
       wood_1x4_yellow: 'Wood 1x4 Yellow Pine', wood_1x4_3d: 'Wood 1x4 3D',
-      poly_vapor: 'Poly Vapor', diesel: 'Diesel'
+      poly_vapor: 'Poly Vapor', plastic_chairs: 'Plastic Chairs', diesel: 'Diesel'
     },
     en: {
       varilla_3: 'Rebar #3', varilla_4: 'Rebar #4', varilla_5: 'Rebar #5',
@@ -445,7 +449,7 @@
       labor: 'Labor', master_finisher: 'Master Finisher',
       wood_2x4: 'Wood 2x4', wood_2x6: 'Wood 2x6',
       wood_1x4_yellow: 'Wood 1x4 Yellow Pine', wood_1x4_3d: 'Wood 1x4 3D',
-      poly_vapor: 'Poly Vapor', diesel: 'Diesel'
+      poly_vapor: 'Poly Vapor', plastic_chairs: 'Plastic Chairs', diesel: 'Diesel'
     }
   };
 

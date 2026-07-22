@@ -116,6 +116,18 @@ body.modal-open { overflow: hidden; }
 /* "only area" checkbox + behaviour */
 .check { display: flex; align-items: center; gap: 9px; margin: 0 0 12px; cursor: pointer; font-weight: 600; font-size: .9rem; }
 .check input { width: 18px; height: 18px; min-width: 18px; accent-color: var(--red); margin: 0; }
+
+/* invoice description checklist */
+.desc-check {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px; margin: 4px 0 12px;
+}
+.desc-check__title {
+  display: block; font-size: .78rem; font-weight: 700; color: var(--text-dim); margin-bottom: 2px;
+}
+.desc-check__hint { display: block; font-size: .7rem; color: var(--text-dim); opacity: .8; margin-bottom: 10px; }
+.desc-check .check { margin: 0 0 8px; font-weight: 500; font-size: .88rem; }
+.desc-check .check:last-child { margin-bottom: 0; }
 .is-area-only .field--lw { display: none; }
 /* the area field replaces Length & Width on sector 1 only */
 .field--area { display: none; }
