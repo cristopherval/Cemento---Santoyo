@@ -424,7 +424,8 @@
     es: {
       varilla_3: 'Varilla #3', varilla_4: 'Varilla #4', varilla_5: 'Varilla #5',
       varilla_fundacion: 'Stirrups 3/8',
-      concreto_3000: 'Concreto 3000', psi_concreto: 'PSI Concreto',
+      concreto_3000: 'Concreto 3000', concreto_3500: 'Concreto 3500', concreto_4000: 'Concreto 4000',
+      psi_concreto: 'PSI Concreto',
       pumping_master: 'Pumping Master', footing: 'Footing',
       mini_excavadora: 'Mini-Excavadora', pulidora: 'Pulidora', bobcat: 'Bobcat',
       concrete_buggy: 'Concrete Buggy',
@@ -436,7 +437,8 @@
     en: {
       varilla_3: 'Rebar #3', varilla_4: 'Rebar #4', varilla_5: 'Rebar #5',
       varilla_fundacion: 'Stirrups 3/8',
-      concreto_3000: 'Concrete 3000', psi_concreto: 'PSI Concrete',
+      concreto_3000: 'Concrete 3000', concreto_3500: 'Concrete 3500', concreto_4000: 'Concrete 4000',
+      psi_concreto: 'PSI Concrete',
       pumping_master: 'Pumping Master', footing: 'Footing',
       mini_excavadora: 'Mini-Excavator', pulidora: 'Power Trowel', bobcat: 'Bobcat',
       concrete_buggy: 'Concrete Buggy',

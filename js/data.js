@@ -15,6 +15,8 @@
       id: 'concreto',
       items: [
         { id: 'concreto_3000', price: 190.00 },
+        { id: 'concreto_3500', price: 200.00 },
+        { id: 'concreto_4000', price: 210.00 },
         { id: 'psi_concreto', price: 170.00 },
         { id: 'pumping_master', price: 1500.00 },
         { id: 'footing', price: 165.00 }
