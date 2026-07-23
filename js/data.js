@@ -65,7 +65,9 @@
     '4000 psi concrete',
     'Poly Vapor 6000',
     'Stirrups',
-    'Plastic Chairs'
+    'Plastic Chairs',
+    '4" thick',
+    '6" thick'
   ];
 
   const COMPANY = {

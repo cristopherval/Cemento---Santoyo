@@ -94,8 +94,9 @@
       c.addEventListener('change', syncDescFromChecklist));
   }
 
-  // Fixed divider between the hand-typed text and the checklist items.
+  // Fixed divider + heading that precede the checklist items.
   const DESC_SEP = '------------------------';
+  const DESC_HEAD = 'Materials';
 
   // Rebuild the description: hand-typed text on top, the divider, then the
   // checked items. The checklist block is regenerated from the checkboxes, so
@@ -106,11 +107,11 @@
     const all = AppData.DESC_ITEMS || [];
     const checked = Array.prototype.slice.call(wrap.querySelectorAll('input[data-desc-i]'))
       .filter((c) => c.checked).map((c) => all[+c.dataset.descI]);
-    // anything that isn't the divider or a checklist item is the user's own text
+    // anything that isn't the divider, the heading or a checklist item is the user's own text
     const custom = (ta.value || '').split('\n')
-      .filter((l) => l.trim() !== DESC_SEP && all.indexOf(l.trim()) < 0);
+      .filter((l) => l.trim() !== DESC_SEP && l.trim() !== DESC_HEAD && all.indexOf(l.trim()) < 0);
     while (custom.length && custom[custom.length - 1].trim() === '') custom.pop();
-    const next = checked.length ? custom.concat([DESC_SEP], checked) : custom;
+    const next = checked.length ? custom.concat([DESC_SEP, DESC_HEAD], checked) : custom;
     const value = next.join('\n');
     if (ta.value !== value) ta.value = value;   // don't touch the caret if nothing changed
     scheduleBuild();
