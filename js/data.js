@@ -59,6 +59,7 @@
      as they must appear on the invoice (no quantities, no prices). */
   const DESC_ITEMS = [
     '3/8 rebar',
+    '1/2 rebar',
     '5/8 rebar',
     '3000 psi concrete',
     '3500 psi concrete',
@@ -67,6 +68,7 @@
     'Stirrups',
     'Plastic Chairs',
     '4" thick',
+    '5" thick',
     '6" thick'
   ];
 
