@@ -117,24 +117,6 @@
       if (e.key === 'Escape' && !$('confirmDialog').hidden) closeConfirm(false);
     });
 
-    $('clearDataBtn').addEventListener('click', async () => {
-      // one themed dialog: message + a field that requires typing the exact phrase
-      const phrase = I18n.t('delete_all_phrase');
-      const ok = await askConfirm({
-        title: I18n.t('clear_data'),
-        message: I18n.t('confirm_clear'),
-        phraseHint: I18n.t('confirm_clear_type').replace('{phrase}', phrase),
-        requirePhrase: phrase,
-        confirmText: I18n.t('clear_data')
-      });
-      if (!ok) return;
-      Storage.clearHistory(); Storage.clearQuotes(); Storage.clearJobs();
-      if (window.Quotes) Quotes.renderList();
-      if (window.Finance) Finance.render();
-      Invoice.renderHistory();
-      toast(I18n.t('saved'));
-    });
-
     $('backToCalcBtn').addEventListener('click', () => showView('view-quotes'));
 
     const syncBtn = $('syncNowBtn');

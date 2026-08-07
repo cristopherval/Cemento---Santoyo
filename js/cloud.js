@@ -242,7 +242,12 @@
       signIn($('authEmail').value, $('authPassword').value);
     });
     const out = $('signOutBtn');
-    if (out) out.addEventListener('click', signOut);
+    if (out) out.addEventListener('click', async () => {
+      const ok = !global.App || !App.confirm
+        ? confirm(I18n.t('confirm_sign_out'))
+        : await App.confirm({ title: I18n.t('sign_out'), message: I18n.t('confirm_sign_out'), confirmText: I18n.t('sign_out') });
+      if (ok) signOut();
+    });
     document.addEventListener('i18n:changed', () => updateStatus());
   }
 
