@@ -8,10 +8,18 @@ on:
     - cron: '0 12 */2 * *'   # 12:00 UTC, cada 2 días
   workflow_dispatch:          # botón "Run workflow" para probarlo a mano
 
+permissions:
+  contents: write             # necesario para el commit de mantenimiento
+
 jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0      # historial completo: evita "shallow update not allowed" al hacer push
+
       - name: Ping Supabase
         env:
           # La anon key es pública por diseño (ya está en js/config.js);
@@ -28,3 +36,26 @@ jobs:
             -d '{}'
           echo ""
           echo "Ping OK — $(date -u '+%Y-%m-%d %H:%M UTC')"
+
+      # GitHub desactiva los cron de repos públicos que pasan 60 días sin
+      # commits (las corridas del propio cron NO cuentan como actividad). Este
+      # paso hace un commit de mantenimiento solo cuando el último commit ya
+      # tiene más de 45 días, así el contador nunca llega a 60 y el historial
+      # se mantiene limpio (unos 8 commits al año en el peor caso).
+      - name: Keep the workflow from being auto-disabled
+        run: |
+          set -euo pipefail
+          LAST=$(git log -1 --format=%ct)
+          DAYS=$(( ( $(date +%s) - LAST ) / 86400 ))
+          echo "Último commit hace $DAYS días."
+          if [ "$DAYS" -lt 45 ]; then
+            echo "El repo sigue activo; no hace falta commit."
+            exit 0
+          fi
+          date -u '+%Y-%m-%d %H:%M UTC' > .github/last-keepalive.txt
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/last-keepalive.txt
+          git commit -m "chore: keepalive (mantiene activo el cron de Supabase)"
+          git push
+          echo "Commit de mantenimiento hecho: el contador de 60 días se reinició."
