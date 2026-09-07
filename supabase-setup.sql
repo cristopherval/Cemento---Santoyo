@@ -107,6 +107,27 @@ revoke execute on function public.submit_signature(text, text, text) from public
 grant  execute on function public.get_invoice_for_signing(text, text) to anon, authenticated;
 grant  execute on function public.submit_signature(text, text, text)  to anon, authenticated;
 
+-- ---------- Keep-alive (evita que el plan gratuito pause el proyecto) ----------
+-- Supabase pausa los proyectos gratuitos tras 7 días sin actividad. Un cron de
+-- GitHub Actions (.github/workflows/keepalive.yml) llama a esta función cada 2
+-- días con la anon key. No devuelve datos: solo toca la base para registrar
+-- actividad real.
+create or replace function public.ping()
+  returns text
+  language plpgsql
+  security definer
+  set search_path = public
+as $$
+declare v int;
+begin
+  select 1 into v from public.quotes limit 1;   -- toca la tabla; no expone nada
+  return 'ok';
+end;
+$$;
+
+revoke execute on function public.ping() from public;
+grant  execute on function public.ping() to anon, authenticated;
+
 -- ---------- Almacenamiento de archivos (pestaña "Almacenamiento") ----------
 -- Bucket privado para PDFs/imágenes subidos. Solo usuarios autenticados pueden
 -- subir/ver/borrar; el rol anónimo no tiene acceso.
