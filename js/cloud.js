@@ -26,9 +26,14 @@
   let pulling = false;
   let booted = false;
   let flushTimer = null;
-  let idleTimer = null;
-  const IDLE_MS = 60 * 60 * 1000;   // auto sign-out after 60 min of inactivity
-  let idleBound = false;
+
+  /* Session lifetime: the app stays signed in for 30 full days from the last
+     login (no idle timeout — closing the app or leaving it open changes
+     nothing). Once those 30 days pass, the session is closed and the password
+     is required again. */
+  const SESSION_MAX_MS = 30 * 24 * 60 * 60 * 1000;
+  const LOGIN_AT_KEY = 'santoyo.auth.loginAt';
+  let expiryTimer = null;
 
   function cfg() { return global.SANTOYO_CONFIG || {}; }
   function ready() { return enabled && client && user; }
@@ -165,6 +170,7 @@
       const { data, error } = await client.auth.signInWithPassword({ email: (email || '').trim(), password: password || '' });
       if (error) throw error;
       user = (data && data.user) || user;
+      LS.set(LOGIN_AT_KEY, Date.now());   // start the 30-day window
       hideGate();
       afterLogin();          // drive success directly; don't rely only on the auth event
     } catch (e) {
@@ -177,7 +183,8 @@
 
   async function signOut() {
     if (!client) return;
-    clearTimeout(idleTimer);
+    clearTimeout(expiryTimer);
+    LS.set(LOGIN_AT_KEY, 0);
     await client.auth.signOut();
     // keep local data, but force a fresh seed/login next time
     LS.set(SEED_KEY, false);
@@ -185,26 +192,40 @@
 
   async function afterLogin() {
     showUserEmail();
-    startIdleWatch();
+    watchSessionExpiry();
     seedIfFirstRun();
     await pullAll();
     if (!booted) { booted = true; startListeners(); }
     flushQueue();
   }
 
-  /* ---------- idle auto sign-out ---------- */
-  function resetIdle() {
-    if (!ready()) return;
-    clearTimeout(idleTimer);
-    idleTimer = setTimeout(() => { if (ready()) signOut(); }, IDLE_MS);
+  /* ---------- 30-day session window ---------- */
+  // ms left before the session expires; <= 0 means it already did.
+  function sessionMsLeft() {
+    const at = Number(LS.get(LOGIN_AT_KEY, 0)) || 0;
+    if (!at) return SESSION_MAX_MS;   // legacy session with no stamp: start the clock now
+    return at + SESSION_MAX_MS - Date.now();
   }
-  function startIdleWatch() {
-    if (!idleBound) {
-      ['pointerdown', 'keydown', 'touchstart'].forEach((ev) =>
-        document.addEventListener(ev, resetIdle, { passive: true }));
-      idleBound = true;
-    }
-    resetIdle();
+
+  // Signs out if the 30 days are up. Returns true when the session expired.
+  async function enforceSessionExpiry() {
+    if (!ready()) return false;
+    if (sessionMsLeft() > 0) return false;
+    await signOut();
+    const err = $('authError');
+    if (err) err.textContent = I18n.t('auth_expired');
+    return true;
+  }
+
+  // Re-arm a timer so a session that runs out while the app is open closes too.
+  function watchSessionExpiry() {
+    if (!LS.get(LOGIN_AT_KEY, 0)) LS.set(LOGIN_AT_KEY, Date.now());
+    clearTimeout(expiryTimer);
+    // setTimeout caps at ~24.8 days, so clamp and re-arm.
+    const wait = Math.min(Math.max(sessionMsLeft(), 0), 6 * 60 * 60 * 1000);
+    expiryTimer = setTimeout(async () => {
+      if (!(await enforceSessionExpiry())) watchSessionExpiry();
+    }, wait);
   }
 
   function showUserEmail() {
@@ -229,8 +250,12 @@
   function startListeners() {
     window.addEventListener('online', () => { updateStatus(); flushQueue(); pullAll(); });
     window.addEventListener('offline', () => updateStatus('offline'));
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && navigator.onLine) { pullAll(); flushQueue(); }
+    // Timers don't fire while the device sleeps, so re-check the 30-day window
+    // every time the app comes back to the foreground.
+    document.addEventListener('visibilitychange', async () => {
+      if (document.hidden) return;
+      if (await enforceSessionExpiry()) return;
+      if (navigator.onLine) { pullAll(); flushQueue(); }
     });
     setInterval(() => { if (navigator.onLine) { pullAll(); flushQueue(); } }, 45000);
   }
@@ -339,18 +364,26 @@
     if (!c.SUPABASE_URL || !c.SUPABASE_ANON_KEY) { enabled = false; hideGate(); return; }
     if (!global.supabase || !global.supabase.createClient) { enabled = false; hideGate(); return; }
     enabled = true;
-    client = global.supabase.createClient(c.SUPABASE_URL, c.SUPABASE_ANON_KEY);
+    // persistSession + autoRefreshToken keep the user signed in across app
+    // restarts; our own 30-day window (LOGIN_AT_KEY) is what ends the session.
+    client = global.supabase.createClient(c.SUPABASE_URL, c.SUPABASE_ANON_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true, storage: global.localStorage }
+    });
     bindUI();
     // SIGNED_IN is handled directly in signIn(). Here we only restore an existing
     // session on load and react to sign-out. Deferred with setTimeout to avoid the
     // known supabase-js deadlock when calling the API inside this callback.
     client.auth.onAuthStateChange((event, session) => {
       user = (session && session.user) || null;
-      setTimeout(() => {
+      setTimeout(async () => {
         if (event === 'INITIAL_SESSION') {
-          if (user) { hideGate(); afterLogin(); } else { showGate(); }
+          // A stored session goes straight into the app — no login screen —
+          // unless its 30 days are already up.
+          if (user && sessionMsLeft() > 0) { hideGate(); afterLogin(); }
+          else if (user) { await enforceSessionExpiry(); }
+          else { showGate(); }
         } else if (event === 'SIGNED_OUT') {
-          booted = false; showGate();
+          booted = false; clearTimeout(expiryTimer); showGate();
         }
         updateStatus();
       }, 0);
