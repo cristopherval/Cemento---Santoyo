@@ -27,13 +27,27 @@
   let booted = false;
   let flushTimer = null;
 
-  /* Session lifetime: the app stays signed in for 30 full days from the last
+  /* Session lifetime: the app stays signed in for 15 full days from the last
      login (no idle timeout — closing the app or leaving it open changes
-     nothing). Once those 30 days pass, the session is closed and the password
+     nothing). Once those 15 days pass, the session is closed and the password
      is required again. */
-  const SESSION_MAX_MS = 30 * 24 * 60 * 60 * 1000;
+  const SESSION_MAX_MS = 15 * 24 * 60 * 60 * 1000;
   const LOGIN_AT_KEY = 'santoyo.auth.loginAt';
+  const CREDS_KEY = 'santoyo.auth.creds';
   let expiryTimer = null;
+
+  /* Remembered credentials: after a successful login they stay on THIS device
+     so the 15-day re-login is just one tap on "Entrar". Base64 only keeps them
+     from being readable at a glance — it is not encryption, and anyone with the
+     unlocked device could recover them. A manual "Cerrar sesión" forgets them;
+     the automatic 15-day expiry keeps them. */
+  function saveCreds(email, password) {
+    try { LS.set(CREDS_KEY, btoa(encodeURIComponent(JSON.stringify({ email, password })))); } catch (e) {}
+  }
+  function loadCreds() {
+    try { return JSON.parse(decodeURIComponent(atob(LS.get(CREDS_KEY, '')))) || null; } catch (e) { return null; }
+  }
+  function clearCreds() { try { localStorage.removeItem(CREDS_KEY); } catch (e) {} }
 
   function cfg() { return global.SANTOYO_CONFIG || {}; }
   function ready() { return enabled && client && user; }
@@ -160,17 +174,33 @@
   }
 
   /* ---------------- auth ---------------- */
-  function showGate() { const g = $('authGate'); if (g) g.hidden = false; }
+  // Fill the login form with the credentials remembered on this device, so the
+  // 15-day re-login needs nothing but the "Entrar" button.
+  function fillRememberedCreds() {
+    const creds = loadCreds();
+    if (!creds) return;
+    const em = $('authEmail'), pw = $('authPassword');
+    if (em && !em.value) em.value = creds.email || '';
+    if (pw && !pw.value) pw.value = creds.password || '';
+  }
+
+  function showGate() {
+    const g = $('authGate');
+    if (g) g.hidden = false;
+    fillRememberedCreds();
+  }
   function hideGate() { const g = $('authGate'); if (g) g.hidden = true; }
 
   async function signIn(email, password) {
     const err = $('authError'); if (err) err.textContent = '';
     const btn = $('authSubmit'); if (btn) btn.disabled = true;
     try {
-      const { data, error } = await client.auth.signInWithPassword({ email: (email || '').trim(), password: password || '' });
+      const mail = (email || '').trim(), pass = password || '';
+      const { data, error } = await client.auth.signInWithPassword({ email: mail, password: pass });
       if (error) throw error;
       user = (data && data.user) || user;
-      LS.set(LOGIN_AT_KEY, Date.now());   // start the 30-day window
+      LS.set(LOGIN_AT_KEY, Date.now());   // start the 15-day window
+      saveCreds(mail, pass);              // pre-fill the next login on this device
       hideGate();
       afterLogin();          // drive success directly; don't rely only on the auth event
     } catch (e) {
@@ -181,10 +211,17 @@
     }
   }
 
-  async function signOut() {
+  // `forget` drops the remembered credentials: true when the user signs out on
+  // purpose, false when the 15-day window simply ran out.
+  async function signOut(forget) {
     if (!client) return;
     clearTimeout(expiryTimer);
     LS.set(LOGIN_AT_KEY, 0);
+    if (forget) {
+      clearCreds();
+      const em = $('authEmail'), pw = $('authPassword');
+      if (em) em.value = ''; if (pw) pw.value = '';
+    }
     await client.auth.signOut();
     // keep local data, but force a fresh seed/login next time
     LS.set(SEED_KEY, false);
@@ -199,7 +236,7 @@
     flushQueue();
   }
 
-  /* ---------- 30-day session window ---------- */
+  /* ---------- 15-day session window ---------- */
   // ms left before the session expires; <= 0 means it already did.
   function sessionMsLeft() {
     const at = Number(LS.get(LOGIN_AT_KEY, 0)) || 0;
@@ -207,7 +244,7 @@
     return at + SESSION_MAX_MS - Date.now();
   }
 
-  // Signs out if the 30 days are up. Returns true when the session expired.
+  // Signs out if the 15 days are up. Returns true when the session expired.
   async function enforceSessionExpiry() {
     if (!ready()) return false;
     if (sessionMsLeft() > 0) return false;
@@ -250,7 +287,7 @@
   function startListeners() {
     window.addEventListener('online', () => { updateStatus(); flushQueue(); pullAll(); });
     window.addEventListener('offline', () => updateStatus('offline'));
-    // Timers don't fire while the device sleeps, so re-check the 30-day window
+    // Timers don't fire while the device sleeps, so re-check the 15-day window
     // every time the app comes back to the foreground.
     document.addEventListener('visibilitychange', async () => {
       if (document.hidden) return;
@@ -271,7 +308,7 @@
       const ok = !global.App || !App.confirm
         ? confirm(I18n.t('confirm_sign_out'))
         : await App.confirm({ title: I18n.t('sign_out'), message: I18n.t('confirm_sign_out'), confirmText: I18n.t('sign_out') });
-      if (ok) signOut();
+      if (ok) signOut(true);   // manual sign-out → also forget the credentials
     });
     document.addEventListener('i18n:changed', () => updateStatus());
   }
@@ -365,7 +402,7 @@
     if (!global.supabase || !global.supabase.createClient) { enabled = false; hideGate(); return; }
     enabled = true;
     // persistSession + autoRefreshToken keep the user signed in across app
-    // restarts; our own 30-day window (LOGIN_AT_KEY) is what ends the session.
+    // restarts; our own 15-day window (LOGIN_AT_KEY) is what ends the session.
     client = global.supabase.createClient(c.SUPABASE_URL, c.SUPABASE_ANON_KEY, {
       auth: { persistSession: true, autoRefreshToken: true, storage: global.localStorage }
     });
@@ -378,7 +415,7 @@
       setTimeout(async () => {
         if (event === 'INITIAL_SESSION') {
           // A stored session goes straight into the app — no login screen —
-          // unless its 30 days are already up.
+          // unless its 15 days are already up.
           if (user && sessionMsLeft() > 0) { hideGate(); afterLogin(); }
           else if (user) { await enforceSessionExpiry(); }
           else { showGate(); }
