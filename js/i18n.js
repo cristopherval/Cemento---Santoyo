@@ -435,9 +435,10 @@
       concreto_3000: 'Concreto 3000', concreto_3500: 'Concreto 3500', concreto_4000: 'Concreto 4000',
       psi_concreto: 'PSI Concreto',
       pumping_master: 'Pumping Master', footing: 'Footing',
+      dirt_truck: 'Dirt Truck',
       mini_excavadora: 'Mini-Excavadora', pulidora: 'Pulidora', bobcat: 'Bobcat',
       concrete_buggy: 'Concrete Buggy',
-      labor: 'Labor', master_finisher: 'Master Finisher',
+      labor: 'Labor', labor_prep: 'Labor Prep', master_finisher: 'Master Finisher',
       wood_2x4: 'Wood 2x4', wood_2x6: 'Wood 2x6',
       wood_1x4_yellow: 'Wood 1x4 Yellow Pine', wood_1x4_3d: 'Wood 1x4 3D',
       poly_vapor: 'Poly Vapor', plastic_chairs: 'Plastic Chairs', diesel: 'Diesel'
@@ -448,9 +449,10 @@
       concreto_3000: 'Concrete 3000', concreto_3500: 'Concrete 3500', concreto_4000: 'Concrete 4000',
       psi_concreto: 'PSI Concrete',
       pumping_master: 'Pumping Master', footing: 'Footing',
+      dirt_truck: 'Dirt Truck',
       mini_excavadora: 'Mini-Excavator', pulidora: 'Power Trowel', bobcat: 'Bobcat',
       concrete_buggy: 'Concrete Buggy',
-      labor: 'Labor', master_finisher: 'Master Finisher',
+      labor: 'Labor', labor_prep: 'Labor Prep', master_finisher: 'Master Finisher',
       wood_2x4: 'Wood 2x4', wood_2x6: 'Wood 2x6',
       wood_1x4_yellow: 'Wood 1x4 Yellow Pine', wood_1x4_3d: 'Wood 1x4 3D',
       poly_vapor: 'Poly Vapor', plastic_chairs: 'Plastic Chairs', diesel: 'Diesel'
@@ -458,8 +460,8 @@
   };
 
   const GROUP_NAMES = {
-    es: { varilla: 'Varilla', concreto: 'Concreto', maquinaria: 'Maquinaria', personal: 'Personal', madera: 'Madera', otros: 'Otros Gastos' },
-    en: { varilla: 'Rebar', concreto: 'Concrete', maquinaria: 'Machinery', personal: 'Labor', madera: 'Wood', otros: 'Other Expenses' }
+    es: { varilla: 'Varilla', concreto: 'Concreto', dirt: 'Dirt', maquinaria: 'Maquinaria', personal: 'Personal', madera: 'Madera', otros: 'Otros Gastos' },
+    en: { varilla: 'Rebar', concreto: 'Concrete', dirt: 'Dirt', maquinaria: 'Machinery', personal: 'Labor', madera: 'Wood', otros: 'Other Expenses' }
   };
 
   let current = 'es';

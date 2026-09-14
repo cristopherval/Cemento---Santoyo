@@ -21,6 +21,12 @@
       ]
     },
     {
+      id: 'dirt',
+      items: [
+        { id: 'dirt_truck', price: 600.00 }
+      ]
+    },
+    {
       id: 'maquinaria',
       items: [
         { id: 'mini_excavadora', price: 300.00 },
@@ -33,6 +39,7 @@
       id: 'personal',
       items: [
         { id: 'labor', price: 250.00 },
+        { id: 'labor_prep', price: 250.00 },
         { id: 'master_finisher', price: 350.00 }
       ]
     },
@@ -69,7 +76,8 @@
     'Plastic Chairs',
     '4" thick',
     '5" thick',
-    '6" thick'
+    '6" thick',
+    'Dirt Truck'
   ];
 
   const COMPANY = {
