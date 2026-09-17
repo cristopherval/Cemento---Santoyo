@@ -89,23 +89,34 @@
         </div>
       </div>
 
-      <!-- Footing dimensions -->
-      <div class="card">
+      <!-- Footing dimensions (sector 1 + optional extra sectors) -->
+      <div class="card" id="footingCard">
         <h2 class="card__title" data-i18n="footing_title">Footing (Yardas Cúbicas)</h2>
-        <div class="grid3">
-          <label class="field">
-            <span data-i18n="length_ft">Largo (ft)</span>
-            <input type="number" inputmode="decimal" id="f_length" min="0" step="0.01" placeholder="0" />
-          </label>
-          <label class="field">
-            <span data-i18n="width_in">Ancho (in)</span>
-            <input type="number" inputmode="decimal" id="f_width" min="0" step="0.01" placeholder="0" />
-          </label>
-          <label class="field">
-            <span data-i18n="depth_in">Grosor (in)</span>
-            <input type="number" inputmode="decimal" id="f_depth" min="0" step="0.01" placeholder="0" />
-          </label>
+        <div class="sector" id="mainFooting">
+          <div class="sector__head">
+            <span class="sector__label"><span data-i18n="sector">Sector</span> 1</span>
+            <strong class="sector__cuyd" id="f_cuyd">0.00</strong>
+          </div>
+          <div class="grid3">
+            <label class="field">
+              <span data-i18n="length_ft">Largo (ft)</span>
+              <input type="number" inputmode="decimal" id="f_length" min="0" step="0.01" placeholder="0" />
+            </label>
+            <label class="field">
+              <span data-i18n="width_in">Ancho (in)</span>
+              <input type="number" inputmode="decimal" id="f_width" min="0" step="0.01" placeholder="0" />
+            </label>
+            <label class="field">
+              <span data-i18n="depth_in">Grosor (in)</span>
+              <input type="number" inputmode="decimal" id="f_depth" min="0" step="0.01" placeholder="0" />
+            </label>
+          </div>
         </div>
+
+        <div id="extraFootings"><!-- filled by JS --></div>
+
+        <button type="button" class="btn btn--ghost btn--sm btn--block" id="addFootingBtn" data-i18n="add_sector">+ Agregar sector</button>
+
         <div class="result">
           <span data-i18n="total_cuyd">Total Yardas Cúbicas</span>
           <strong id="f_result">0.00</strong>

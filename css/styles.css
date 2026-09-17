@@ -152,7 +152,7 @@ body.modal-open { overflow: hidden; }
   border-radius: var(--radius-sm); width: 30px; height: 30px; padding: 0;
   font-size: .8rem; line-height: 1; cursor: pointer;
 }
-#addSectorBtn { margin-bottom: 14px; }
+#addSectorBtn, #addFootingBtn { margin-bottom: 14px; }
 
 input, select, textarea {
   width: 100%;

@@ -8,6 +8,8 @@
   // Extra concrete sectors (sector 1 lives in the static #mainSector fields).
   // A job can be split across several slabs; areas and cubic yards are summed.
   let sectors = []; // [{ id, length, width, depth }]
+  // Extra footing sectors, same idea (sector 1 lives in #mainFooting). Width is in inches.
+  let footings = []; // [{ id, length, width, depth }]
 
   function initState() {
     AppData.MATERIAL_GROUPS.forEach((g) => {
@@ -102,12 +104,18 @@
     };
   }
 
-  // Rebuilt only when a sector is added / removed / loaded — never while typing,
-  // so the focused input keeps its caret. Live values go through updateEstimated().
-  function renderSectors() {
-    const wrap = $('extraSectors');
-    if (!wrap) return;
-    wrap.innerHTML = sectors.map((s, i) => `
+  // Footing: sector 1 from #mainFooting plus the extras, summed.
+  function footingTotals() {
+    const mainCuyd = Calc.footingCuYd($('f_length').value, $('f_width').value, $('f_depth').value);
+    const extras = footings.map((s) => ({ id: s.id, cuyd: Calc.footingCuYd(s.length, s.width, s.depth) }));
+    return { mainCuyd, extras, cuyd: extras.reduce((t, e) => t + e.cuyd, mainCuyd) };
+  }
+
+  // Extra-sector rows for a list (concrete or footing). Rebuilt only when a sector
+  // is added / removed / loaded — never while typing, so the focused input keeps
+  // its caret. Live values go through updateEstimated().
+  function sectorRowsHTML(list, widthLabelKey) {
+    return list.map((s, i) => `
       <div class="sector sector--extra" data-sid="${s.id}">
         <div class="sector__head">
           <span class="sector__label">${I18n.t('sector')} ${i + 2}</span>
@@ -122,7 +130,7 @@
                    data-k="length" value="${s.length}" />
           </label>
           <label class="field">
-            <span>${I18n.t('width_ft')}</span>
+            <span>${I18n.t(widthLabelKey)}</span>
             <input type="number" inputmode="decimal" min="0" step="0.01" placeholder="0"
                    data-k="width" value="${s.width}" />
           </label>
@@ -135,6 +143,15 @@
       </div>`).join('');
   }
 
+  function renderSectors() {
+    const wrap = $('extraSectors');
+    if (wrap) wrap.innerHTML = sectorRowsHTML(sectors, 'width_ft');
+  }
+  function renderFootings() {
+    const wrap = $('extraFootings');
+    if (wrap) wrap.innerHTML = sectorRowsHTML(footings, 'width_in');
+  }
+
   function addSector() {
     sectors.push({ id: 's_' + makeId(), length: '', width: '', depth: '' });
     renderSectors();
@@ -142,14 +159,43 @@
     const last = $('extraSectors').lastElementChild;
     if (last) last.querySelector('input').focus();
   }
+  function addFooting() {
+    footings.push({ id: 'f_' + makeId(), length: '', width: '', depth: '' });
+    renderFootings();
+    recompute();
+    const last = $('extraFootings').lastElementChild;
+    if (last) last.querySelector('input').focus();
+  }
+
+  // Typing and ✕ inside an extra-sector list — delegated so rows can come and go
+  // without rebinding. getList/setList point at `sectors` or `footings`.
+  function bindSectorList(wrapId, getList, setList, render) {
+    const wrap = $(wrapId);
+    wrap.addEventListener('input', (e) => {
+      const row = e.target.closest('[data-sid]');
+      const sec = row && getList().find((s) => s.id === row.dataset.sid);
+      if (!sec) return;
+      sec[e.target.dataset.k] = e.target.value;
+      recompute();
+    });
+    wrap.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-del]');
+      if (!btn) return;
+      setList(getList().filter((s) => s.id !== btn.closest('[data-sid]').dataset.sid));
+      render();
+      recompute();
+    });
+  }
 
   function updateEstimated() {
     const areaInput = $('area_sqft');
     const sec = sectorTotals();
+    const foot = footingTotals();
 
-    // per-sector cubic yards
+    // per-sector cubic yards (concrete and footing ids never collide: s_ / f_)
     $('c_cuyd').textContent = Calc.fmtNum(sec.mainCuyd);
-    sec.extras.forEach((e) => {
+    $('f_cuyd').textContent = Calc.fmtNum(foot.mainCuyd);
+    sec.extras.concat(foot.extras).forEach((e) => {
       const el = document.querySelector(`[data-sid="${e.id}"] [data-cuyd]`);
       if (el) el.textContent = Calc.fmtNum(e.cuyd);
     });
@@ -158,18 +204,17 @@
     if (!areaInput.dataset.touched) areaInput.value = sec.area ? Calc.round2(sec.area) : '';
 
     const area = Calc.num(areaInput.value);
-    const footing = Calc.footingCuYd($('f_length').value, $('f_width').value, $('f_depth').value);
     const rebar = Calc.rebarEstimate(area, $('rebarSpacing').value);
 
     setEst('concreto_3000', sec.cuyd);
-    setEst('footing', footing);
+    setEst('footing', foot.cuyd);
     setEst('varilla_3', rebar);
     setEst('varilla_4', rebar);
     setEst('varilla_5', rebar);
     setEst('varilla_fundacion', rebar);
 
     $('c_result').textContent = Calc.fmtNum(sec.cuyd);
-    $('f_result').textContent = Calc.fmtNum(footing);
+    $('f_result').textContent = Calc.fmtNum(foot.cuyd);
   }
 
   function setEst(key, val) {
@@ -224,6 +269,7 @@
     const materialsTotal = materials.reduce((s, m) => s + m.total, 0);
     const areaOnly = isAreaOnly();
     const sec = sectorTotals();
+    const foot = footingTotals();
     return {
       areaOnly,
       // `concrete` is sector 1; `sectors` holds the extra ones. concreteCuyd is the sum.
@@ -234,8 +280,13 @@
         area: Calc.round2(sec.extras[i].area), cuyd: Calc.round2(sec.extras[i].cuyd)
       })),
       concreteCuyd: Calc.round2(sec.cuyd),
+      // `footing` is footing sector 1; `footings` holds the extra ones. footingCuyd is the sum.
       footing: { length: $('f_length').value, width: $('f_width').value, depth: $('f_depth').value,
-                 cuyd: Calc.round2(Calc.footingCuYd($('f_length').value, $('f_width').value, $('f_depth').value)) },
+                 cuyd: Calc.round2(foot.mainCuyd) },
+      footings: footings.map((s, i) => ({
+        length: s.length, width: s.width, depth: s.depth, cuyd: Calc.round2(foot.extras[i].cuyd)
+      })),
+      footingCuyd: Calc.round2(foot.cuyd),
       area, pricePerSqft,
       sqftTotal: Calc.round2(sqftTotal),
       materials,
@@ -252,6 +303,8 @@
     applyAreaOnly();
     sectors = [];
     renderSectors();
+    footings = [];
+    renderFootings();
     Object.keys(state).forEach((id) => { state[id].qty = 0; });
     currentQuoteId = null;
     renderMaterials();
@@ -261,7 +314,7 @@
   // Is there anything worth warning about before clearing the form?
   function isDirty() {
     if (currentQuoteId) return true;                 // editing a saved quote
-    if (sectors.length) return true;                 // extra sectors added
+    if (sectors.length || footings.length) return true;   // extra sectors added
     const filled = ['c_length','c_width','c_depth','c_area','f_length','f_width','f_depth',
       'area_sqft','q_title','q_name','q_phone','q_address','q_email']
       .some((id) => { const el = $(id); return el && String(el.value).trim() !== ''; });
@@ -344,6 +397,11 @@
       id: 's_' + makeId(), length: s.length || '', width: s.width || '', depth: s.depth || ''
     }));
     renderSectors();
+    // older quotes have no `footings` → just sector 1
+    footings = (c.footings || []).map((s) => ({
+      id: 'f_' + makeId(), length: s.length || '', width: s.width || '', depth: s.depth || ''
+    }));
+    renderFootings();
 
     Object.keys(state).forEach((id) => { state[id].qty = 0; });
     (c.materials || []).forEach((m) => {
@@ -390,22 +448,11 @@
       recompute();
     });
 
-    // extra sectors: delegated so rows can come and go without rebinding
+    // extra sectors (concrete and footing)
     $('addSectorBtn').addEventListener('click', addSector);
-    $('extraSectors').addEventListener('input', (e) => {
-      const row = e.target.closest('[data-sid]');
-      const sec = row && sectors.find((s) => s.id === row.dataset.sid);
-      if (!sec) return;
-      sec[e.target.dataset.k] = e.target.value;
-      recompute();
-    });
-    $('extraSectors').addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-del]');
-      if (!btn) return;
-      sectors = sectors.filter((s) => s.id !== btn.closest('[data-sid]').dataset.sid);
-      renderSectors();
-      recompute();
-    });
+    $('addFootingBtn').addEventListener('click', addFooting);
+    bindSectorList('extraSectors', () => sectors, (l) => { sectors = l; }, renderSectors);
+    bindSectorList('extraFootings', () => footings, (l) => { footings = l; }, renderFootings);
 
     $('resetQuoteBtn').addEventListener('click', requestReset);
     $('saveQuoteBtn').addEventListener('click', saveQuote);
@@ -413,6 +460,7 @@
     // re-render labels on language change
     document.addEventListener('i18n:changed', () => {
       renderSectors();
+      renderFootings();
       recompute();
       document.querySelectorAll('[data-name]').forEach((el) => { el.textContent = I18n.material(el.dataset.name); });
       document.querySelectorAll('[data-est-name]').forEach((el) => { el.textContent = I18n.material(el.dataset.estName); });
