@@ -176,6 +176,27 @@
     toast(I18n.t('backup_done'));
   }
 
+  // Importing overwrites the quotes, jobs and invoices, so it takes three separate
+  // confirmations; the last one needs the word typed in, so tapping the same spot
+  // three times can't approve it. Cancelling any of them aborts the import.
+  async function confirmRestore(obj) {
+    const count = (a) => (Array.isArray(a) ? a.length : 0);
+    const phrase = I18n.t('import_phrase');
+    const steps = [
+      { message: I18n.t('confirm_restore'), confirmText: I18n.t('continue') },
+      { message: I18n.t('confirm_restore_2')
+          .replace('{q}', count(obj.quotes)).replace('{j}', count(obj.jobs)).replace('{i}', count(obj.invoices)),
+        confirmText: I18n.t('continue') },
+      { message: I18n.t('confirm_restore_3'), confirmText: I18n.t('import_backup'),
+        requirePhrase: phrase, phraseHint: I18n.t('import_phrase_hint').replace('{phrase}', phrase) }
+    ];
+    for (let n = 0; n < steps.length; n++) {
+      const title = I18n.t('restore_step').replace('{n}', n + 1);
+      if (!await askConfirm(Object.assign({ title }, steps[n]))) return false;
+    }
+    return true;
+  }
+
   function importBackup(e) {
     const file = e.target.files && e.target.files[0];
     e.target.value = '';            // allow re-selecting the same file later
@@ -185,7 +206,7 @@
       let obj;
       try { obj = JSON.parse(reader.result); } catch (_) { toast(I18n.t('restore_error')); return; }
       if (!obj || obj.app !== 'santoyo') { toast(I18n.t('restore_error')); return; }
-      if (!await askConfirm({ message: I18n.t('confirm_restore'), confirmText: I18n.t('import_backup') })) return;
+      if (!await confirmRestore(obj)) return;
       if (!Storage.importAll(obj)) { toast(I18n.t('restore_error')); return; }
       refreshAll();
       // push the restored data up to the cloud (if signed in)

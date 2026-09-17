@@ -564,7 +564,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; marg
   animation: fade .2s ease;
 }
 .dialog__panel h2 { margin: 0 0 6px; font-size: 1.15rem; }
-.dialog__panel p { margin: 0 0 18px; color: var(--text-dim); font-size: .9rem; }
+.dialog__panel p { margin: 0 0 18px; color: var(--text-dim); font-size: .9rem; white-space: pre-line; }
 .btn--block { display: block; width: 100%; margin-bottom: 10px; }
 .dialog__cancel {
   display: block; width: 100%; margin-top: 4px; padding: 10px;
