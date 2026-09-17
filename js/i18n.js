@@ -172,7 +172,7 @@
       sign_out: 'Cerrar sesión',
       confirm_sign_out: '¿Seguro que quieres cerrar sesión?',
       auth_error: 'Correo o contraseña incorrectos.',
-      auth_expired: 'Pasaron 30 días. Vuelve a ingresar tu contraseña.',
+      auth_expired: 'Pasaron 15 días. Vuelve a ingresar tu contraseña.',
       cloud_sync: 'Sincronización',
       signed_in_as: 'Sesión iniciada',
       sync_ok: '✓ Sincronizado',
@@ -384,7 +384,7 @@
       sign_out: 'Sign out',
       confirm_sign_out: 'Are you sure you want to sign out?',
       auth_error: 'Wrong email or password.',
-      auth_expired: '30 days have passed. Please enter your password again.',
+      auth_expired: '15 days have passed. Please enter your password again.',
       cloud_sync: 'Sync',
       signed_in_as: 'Signed in',
       sync_ok: '✓ Synced',
@@ -435,9 +435,10 @@
       concreto_3000: 'Concreto 3000', concreto_3500: 'Concreto 3500', concreto_4000: 'Concreto 4000',
       psi_concreto: 'PSI Concreto',
       pumping_master: 'Pumping Master', footing: 'Footing',
+      dirt_truck: 'Dirt Truck',
       mini_excavadora: 'Mini-Excavadora', pulidora: 'Pulidora', bobcat: 'Bobcat',
       concrete_buggy: 'Concrete Buggy',
-      labor: 'Labor', master_finisher: 'Master Finisher',
+      labor: 'Labor', labor_prep: 'Labor Prep', master_finisher: 'Master Finisher',
       wood_2x4: 'Wood 2x4', wood_2x6: 'Wood 2x6',
       wood_1x4_yellow: 'Wood 1x4 Yellow Pine', wood_1x4_3d: 'Wood 1x4 3D',
       poly_vapor: 'Poly Vapor', plastic_chairs: 'Plastic Chairs', diesel: 'Diesel'
@@ -448,9 +449,10 @@
       concreto_3000: 'Concrete 3000', concreto_3500: 'Concrete 3500', concreto_4000: 'Concrete 4000',
       psi_concreto: 'PSI Concrete',
       pumping_master: 'Pumping Master', footing: 'Footing',
+      dirt_truck: 'Dirt Truck',
       mini_excavadora: 'Mini-Excavator', pulidora: 'Power Trowel', bobcat: 'Bobcat',
       concrete_buggy: 'Concrete Buggy',
-      labor: 'Labor', master_finisher: 'Master Finisher',
+      labor: 'Labor', labor_prep: 'Labor Prep', master_finisher: 'Master Finisher',
       wood_2x4: 'Wood 2x4', wood_2x6: 'Wood 2x6',
       wood_1x4_yellow: 'Wood 1x4 Yellow Pine', wood_1x4_3d: 'Wood 1x4 3D',
       poly_vapor: 'Poly Vapor', plastic_chairs: 'Plastic Chairs', diesel: 'Diesel'
@@ -458,8 +460,8 @@
   };
 
   const GROUP_NAMES = {
-    es: { varilla: 'Varilla', concreto: 'Concreto', maquinaria: 'Maquinaria', personal: 'Personal', madera: 'Madera', otros: 'Otros Gastos' },
-    en: { varilla: 'Rebar', concreto: 'Concrete', maquinaria: 'Machinery', personal: 'Labor', madera: 'Wood', otros: 'Other Expenses' }
+    es: { varilla: 'Varilla', concreto: 'Concreto', dirt: 'Dirt', maquinaria: 'Maquinaria', personal: 'Personal', madera: 'Madera', otros: 'Otros Gastos' },
+    en: { varilla: 'Rebar', concreto: 'Concrete', dirt: 'Dirt', maquinaria: 'Machinery', personal: 'Labor', madera: 'Wood', otros: 'Other Expenses' }
   };
 
   let current = 'es';
