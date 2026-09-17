@@ -332,35 +332,6 @@
     return true;
   }
 
-  /* ---------------- file storage (Supabase Storage) ---------------- */
-  const BUCKET = 'invoices';
-  async function uploadFile(file) {
-    if (!ready()) throw new Error('offline');
-    const safe = (file.name || 'file.pdf').replace(/[^\w.\-]+/g, '_');
-    const path = Date.now() + '-' + safe;
-    const { error } = await client.storage.from(BUCKET).upload(path, file, {
-      upsert: false, contentType: file.type || 'application/octet-stream'
-    });
-    if (error) throw error;
-    return path;
-  }
-  async function listFiles() {
-    if (!ready()) return [];
-    const { data, error } = await client.storage.from(BUCKET)
-      .list('', { limit: 500, sortBy: { column: 'created_at', order: 'desc' } });
-    if (error) throw error;
-    return (data || []).filter((f) => f.id);   // skip folder placeholders
-  }
-  async function fileUrl(path) {
-    const { data, error } = await client.storage.from(BUCKET).createSignedUrl(path, 3600);
-    if (error) throw error;
-    return data.signedUrl;
-  }
-  async function deleteFile(path) {
-    const { error } = await client.storage.from(BUCKET).remove([path]);
-    if (error) throw error;
-  }
-
   /* ---------------- remote signing ---------------- */
   function hasConfig() {
     const c = cfg();
@@ -429,6 +400,5 @@
 
   global.Cloud = { start, signIn, signOut, onLocalChange, pullAll, flushQueue, syncNow, nextInvoiceNumber,
                    hasConfig, initGuest, getInvoiceForSigning, submitSignature, sendForSignature,
-                   uploadFile, listFiles, fileUrl, deleteFile,
                    isEnabled: () => enabled, isOnline: () => ready() && navigator.onLine };
 })(window);
