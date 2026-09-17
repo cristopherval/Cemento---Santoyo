@@ -91,7 +91,21 @@
       `<label class="check"><input type="checkbox" data-desc-i="${i}" /><span>${escapeHtml(label)}</span></label>`
     ).join('');
     wrap.querySelectorAll('input[data-desc-i]').forEach((c) =>
-      c.addEventListener('change', syncDescFromChecklist));
+      c.addEventListener('change', onDescEdited));
+  }
+
+  // A checkbox tick or leaving the Description field: rebuild the text and, if the
+  // invoice is already saved, store it right away — otherwise leaving the screen
+  // without opening the preview would lose the change. A brand-new invoice is
+  // still only saved on preview, so no invoice number is spent just by ticking.
+  function onDescEdited() {
+    syncDescFromChecklist();
+    if (!currentRecord) return;
+    const desc = $('inv_desc').value;
+    if (currentRecord.description === desc) return;
+    currentRecord.description = desc;
+    Storage.saveRecord(currentRecord);   // stamps updatedAt + queues sync
+    App.refreshHistory();
   }
 
   // Fixed divider + heading that precede the checklist items.
@@ -102,11 +116,20 @@
   // e.g. "10 Dirt Trucks x $140.00 = $1,400.00". label → { material id, plural }.
   const PRICED_DESC = { 'Dirt Truck': { id: 'dirt_truck', plural: 'Dirt Trucks' } };
 
+  // The calculator numbers to price those lines with: the linked quote as it is
+  // NOW (it may have been edited after the invoice was created), falling back to
+  // the snapshot stored on the invoice when the quote is gone.
+  function currentCalc() {
+    const q = linkedQuoteId ? Storage.getQuote(linkedQuoteId) : null;
+    return (q && q.calc) || lastQuote;
+  }
+
   // The line a checked item writes into the description. Priced items fall back
   // to the bare name when there's no quote or its quantity is 0 (e.g. "Nuevo").
   function descLine(label) {
     const p = PRICED_DESC[label];
-    const m = p && lastQuote && (lastQuote.materials || []).find((x) => x.id === p.id);
+    const calc = currentCalc();
+    const m = p && calc && (calc.materials || []).find((x) => x.id === p.id);
     const qty = m ? Calc.num(m.qty) : 0;
     if (!qty) return label;
     const price = Calc.num(m.price);
@@ -182,10 +205,19 @@
   // Prefills customer + TOTAL (= Sq.Ft. price, editable). If the quote already
   // has an invoice, that invoice is reopened for preview/reprint instead.
   function fromQuote(quote) {
-    linkedQuoteId = quote.id;
     const existing = quote.invoiceId
       ? Storage.getHistory().find((r) => r.id === quote.invoiceId) : null;
+    // Coming back to the same quote's invoice that isn't saved yet: keep the
+    // draft (ticked boxes, amounts, notes) instead of wiping it.
+    const sameDraft = !existing && !currentRecord && linkedQuoteId === quote.id;
+    linkedQuoteId = quote.id;
     if (existing) { loadRecord(existing); return; }
+    if (sameDraft) {
+      syncDescFromChecklist();   // refresh priced lines in case the quote changed
+      App.showView('view-invoice');
+      window.scrollTo({ top: 0 });
+      return;
+    }
 
     currentRecord = null;
     custPad = null;
@@ -371,6 +403,7 @@
     $('inv_date').value = rec.date || todayISO();
     recompute();
     syncChecklistFromDesc();
+    syncDescFromChecklist();   // refresh priced lines (Dirt Truck) with the quote's current numbers
     showSignStatus(rec);
     // Land on the editable form (not the read-only preview) so a saved/signed
     // invoice can still be edited. Preview/print/share are one tap away.
@@ -674,7 +707,7 @@
     $('inv_date').value = todayISO();
     renderDescChecklist();
     // restore the protected block if the user edited/deleted it by hand
-    $('inv_desc').addEventListener('blur', syncDescFromChecklist);
+    $('inv_desc').addEventListener('blur', onDescEdited);
     $('inv_total_input').addEventListener('input', recompute);
     $('inv_paid').addEventListener('input', recompute);
     $('previewInvoiceBtn').addEventListener('click', requestPreview);
