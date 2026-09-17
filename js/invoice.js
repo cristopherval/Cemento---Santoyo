@@ -98,6 +98,33 @@
   const DESC_SEP = '------------------------';
   const DESC_HEAD = 'Materials';
 
+  // Checklist items that also show quantity × price from the quote's calculator,
+  // e.g. "10 Dirt Trucks x $140.00 = $1,400.00". label → { material id, plural }.
+  const PRICED_DESC = { 'Dirt Truck': { id: 'dirt_truck', plural: 'Dirt Trucks' } };
+
+  // The line a checked item writes into the description. Priced items fall back
+  // to the bare name when there's no quote or its quantity is 0 (e.g. "Nuevo").
+  function descLine(label) {
+    const p = PRICED_DESC[label];
+    const m = p && lastQuote && (lastQuote.materials || []).find((x) => x.id === p.id);
+    const qty = m ? Calc.num(m.qty) : 0;
+    if (!qty) return label;
+    const price = Calc.num(m.price);
+    const qtyTxt = String(Calc.round2(qty));
+    return `${qtyTxt} ${qty === 1 ? label : p.plural} x ${Calc.fmtMoney(price)} = ${Calc.fmtMoney(qty * price)}`;
+  }
+
+  // Index of the checklist item a description line belongs to (-1 if it's the
+  // user's own text). Priced lines match whatever quantity/price they carry.
+  function descItemIndex(line) {
+    const t = line.trim();
+    return (AppData.DESC_ITEMS || []).findIndex((label) => {
+      if (t === label) return true;
+      const p = PRICED_DESC[label];
+      return !!p && new RegExp(`^[\\d.,]+ (${label}|${p.plural}) x \\$[\\d.,]+ = \\$[\\d.,]+$`).test(t);
+    });
+  }
+
   // Rebuild the description: hand-typed text on top, the divider, then the
   // checked items. The checklist block is regenerated from the checkboxes, so
   // deleting those lines by hand does nothing — they only go away by unticking.
@@ -106,10 +133,10 @@
     if (!ta || !wrap) return;
     const all = AppData.DESC_ITEMS || [];
     const checked = Array.prototype.slice.call(wrap.querySelectorAll('input[data-desc-i]'))
-      .filter((c) => c.checked).map((c) => all[+c.dataset.descI]);
+      .filter((c) => c.checked).map((c) => descLine(all[+c.dataset.descI]));
     // anything that isn't the divider, the heading or a checklist item is the user's own text
     const custom = (ta.value || '').split('\n')
-      .filter((l) => l.trim() !== DESC_SEP && l.trim() !== DESC_HEAD && all.indexOf(l.trim()) < 0);
+      .filter((l) => l.trim() !== DESC_SEP && l.trim() !== DESC_HEAD && descItemIndex(l) < 0);
     while (custom.length && custom[custom.length - 1].trim() === '') custom.pop();
     const next = checked.length ? custom.concat([DESC_SEP, DESC_HEAD], checked) : custom;
     const value = next.join('\n');
@@ -121,10 +148,9 @@
   function syncChecklistFromDesc() {
     const ta = $('inv_desc'), wrap = $('descChecklist');
     if (!ta || !wrap) return;
-    const all = AppData.DESC_ITEMS || [];
-    const lines = (ta.value || '').split('\n').map((l) => l.trim());
+    const present = (ta.value || '').split('\n').map(descItemIndex);
     wrap.querySelectorAll('input[data-desc-i]').forEach((c) => {
-      c.checked = lines.indexOf(all[+c.dataset.descI]) >= 0;
+      c.checked = present.indexOf(+c.dataset.descI) >= 0;
     });
   }
 
