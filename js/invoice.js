@@ -137,27 +137,36 @@
     return `${qtyTxt} ${qty === 1 ? label : p.plural} x ${Calc.fmtMoney(price)} = ${Calc.fmtMoney(qty * price)}`;
   }
 
-  // Footing lines, written straight from the quote's calculator — no checkbox:
-  // "Footing 1: 100 ft x 12 in x 12 in = 3.70 yd³" (numbered only when the quote
-  // has several sections). Sections still at 0 are skipped.
+  // The "Footing" checkbox writes one line per footing section of the quote:
+  // "Footing 1: 100 ft x 12 in x 12 in = 3.70 yd³" (numbered only when there are
+  // several). Sections still at 0 are skipped; with no footing at all the box
+  // just writes the bare name, like the other items.
+  const FOOTING_LABEL = 'Footing';
   const FOOTING_LINE = /^Footing( \d+)?: .* = [\d.,]+ yd³$/;
   function footingLines() {
     const calc = currentCalc();
-    if (!calc) return [];
-    const list = [calc.footing].concat(calc.footings || [])
+    const list = !calc ? [] : [calc.footing].concat(calc.footings || [])
       .filter((s) => s && Calc.num(s.cuyd) > 0);
+    if (!list.length) return [FOOTING_LABEL];
     return list.map((s, i) => {
-      const name = list.length > 1 ? `Footing ${i + 1}` : 'Footing';
+      const name = list.length > 1 ? `${FOOTING_LABEL} ${i + 1}` : FOOTING_LABEL;
       return `${name}: ${Calc.num(s.length)} ft x ${Calc.num(s.width)} in x ${Calc.num(s.depth)} in = ${Calc.fmtNum(s.cuyd)} yd³`;
     });
   }
 
+  // The line(s) a checked item writes. Everything writes one line except Footing,
+  // which writes one per section.
+  function descLines(label) {
+    return label === FOOTING_LABEL ? footingLines() : [descLine(label)];
+  }
+
   // Index of the checklist item a description line belongs to (-1 if it's the
-  // user's own text). Priced lines match whatever quantity/price they carry.
+  // user's own text). Priced and footing lines match whatever numbers they carry.
   function descItemIndex(line) {
     const t = line.trim();
     return (AppData.DESC_ITEMS || []).findIndex((label) => {
       if (t === label) return true;
+      if (label === FOOTING_LABEL) return FOOTING_LINE.test(t);
       const p = PRICED_DESC[label];
       return !!p && new RegExp(`^[\\d.,]+ (${label}|${p.plural}) x \\$[\\d.,]+ = \\$[\\d.,]+$`).test(t);
     });
@@ -171,16 +180,13 @@
     if (!ta || !wrap) return;
     const all = AppData.DESC_ITEMS || [];
     const checked = Array.prototype.slice.call(wrap.querySelectorAll('input[data-desc-i]'))
-      .filter((c) => c.checked).map((c) => descLine(all[+c.dataset.descI]));
-    const feet = footingLines();
-    // anything that isn't the divider, the heading, a checklist item or a footing
-    // line is the user's own text
+      .filter((c) => c.checked)
+      .reduce((lines, c) => lines.concat(descLines(all[+c.dataset.descI])), []);
+    // anything that isn't the divider, the heading or a checklist item is the user's own text
     const custom = (ta.value || '').split('\n')
-      .filter((l) => l.trim() !== DESC_SEP && l.trim() !== DESC_HEAD
-        && descItemIndex(l) < 0 && !FOOTING_LINE.test(l.trim()));
+      .filter((l) => l.trim() !== DESC_SEP && l.trim() !== DESC_HEAD && descItemIndex(l) < 0);
     while (custom.length && custom[custom.length - 1].trim() === '') custom.pop();
-    const block = checked.concat(feet);
-    const next = block.length ? custom.concat([DESC_SEP, DESC_HEAD], block) : custom;
+    const next = checked.length ? custom.concat([DESC_SEP, DESC_HEAD], checked) : custom;
     const value = next.join('\n');
     if (ta.value !== value) ta.value = value;   // don't touch the caret if nothing changed
     scheduleBuild();
@@ -248,7 +254,6 @@
     $('inv_email').value = cust.email || '';
     $('inv_desc').value = quote.title || '';
     syncChecklistFromDesc();
-    syncDescFromChecklist();   // write the quote's footing lines into the description
     $('inv_total_input').value = quote.calc && quote.calc.sqftTotal ? quote.calc.sqftTotal : '';
     $('inv_paid').value = '';
     $('inv_date').value = todayISO();

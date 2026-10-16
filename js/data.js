@@ -77,6 +77,7 @@
     '4" thick',
     '5" thick',
     '6" thick',
+    'Footing',
     'Dirt Truck'
   ];
 
