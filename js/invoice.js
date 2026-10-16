@@ -137,6 +137,21 @@
     return `${qtyTxt} ${qty === 1 ? label : p.plural} x ${Calc.fmtMoney(price)} = ${Calc.fmtMoney(qty * price)}`;
   }
 
+  // Footing lines, written straight from the quote's calculator — no checkbox:
+  // "Footing 1: 100 ft x 12 in x 12 in = 3.70 yd³" (numbered only when the quote
+  // has several sections). Sections still at 0 are skipped.
+  const FOOTING_LINE = /^Footing( \d+)?: .* = [\d.,]+ yd³$/;
+  function footingLines() {
+    const calc = currentCalc();
+    if (!calc) return [];
+    const list = [calc.footing].concat(calc.footings || [])
+      .filter((s) => s && Calc.num(s.cuyd) > 0);
+    return list.map((s, i) => {
+      const name = list.length > 1 ? `Footing ${i + 1}` : 'Footing';
+      return `${name}: ${Calc.num(s.length)} ft x ${Calc.num(s.width)} in x ${Calc.num(s.depth)} in = ${Calc.fmtNum(s.cuyd)} yd³`;
+    });
+  }
+
   // Index of the checklist item a description line belongs to (-1 if it's the
   // user's own text). Priced lines match whatever quantity/price they carry.
   function descItemIndex(line) {
@@ -157,11 +172,15 @@
     const all = AppData.DESC_ITEMS || [];
     const checked = Array.prototype.slice.call(wrap.querySelectorAll('input[data-desc-i]'))
       .filter((c) => c.checked).map((c) => descLine(all[+c.dataset.descI]));
-    // anything that isn't the divider, the heading or a checklist item is the user's own text
+    const feet = footingLines();
+    // anything that isn't the divider, the heading, a checklist item or a footing
+    // line is the user's own text
     const custom = (ta.value || '').split('\n')
-      .filter((l) => l.trim() !== DESC_SEP && l.trim() !== DESC_HEAD && descItemIndex(l) < 0);
+      .filter((l) => l.trim() !== DESC_SEP && l.trim() !== DESC_HEAD
+        && descItemIndex(l) < 0 && !FOOTING_LINE.test(l.trim()));
     while (custom.length && custom[custom.length - 1].trim() === '') custom.pop();
-    const next = checked.length ? custom.concat([DESC_SEP, DESC_HEAD], checked) : custom;
+    const block = checked.concat(feet);
+    const next = block.length ? custom.concat([DESC_SEP, DESC_HEAD], block) : custom;
     const value = next.join('\n');
     if (ta.value !== value) ta.value = value;   // don't touch the caret if nothing changed
     scheduleBuild();
@@ -229,6 +248,7 @@
     $('inv_email').value = cust.email || '';
     $('inv_desc').value = quote.title || '';
     syncChecklistFromDesc();
+    syncDescFromChecklist();   // write the quote's footing lines into the description
     $('inv_total_input').value = quote.calc && quote.calc.sqftTotal ? quote.calc.sqftTotal : '';
     $('inv_paid').value = '';
     $('inv_date').value = todayISO();
@@ -403,7 +423,7 @@
     $('inv_date').value = rec.date || todayISO();
     recompute();
     syncChecklistFromDesc();
-    syncDescFromChecklist();   // refresh priced lines (Dirt Truck) with the quote's current numbers
+    syncDescFromChecklist();   // refresh the Dirt Truck and footing lines with the quote's current numbers
     showSignStatus(rec);
     // Land on the editable form (not the read-only preview) so a saved/signed
     // invoice can still be edited. Preview/print/share are one tap away.

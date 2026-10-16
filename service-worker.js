@@ -1,5 +1,5 @@
 /* Santoyo's Concrete Work — Service Worker (offline-first) */
-const CACHE = 'santoyo-v65';
+const CACHE = 'santoyo-v66';
 const ASSETS = [
   './',
   './index.html',
