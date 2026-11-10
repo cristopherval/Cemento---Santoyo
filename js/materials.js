@@ -10,6 +10,13 @@
   let sectors = []; // [{ id, length, width, depth }]
   // Extra footing sectors, same idea (sector 1 lives in #mainFooting). Width is in inches.
   let footings = []; // [{ id, length, width, depth }]
+  // Extra demolition sectors (sector 1 lives in #mainDemo). Charged per Sq.Ft.;
+  // the thickness is only informative (it's shown on the invoice line).
+  let demos = []; // [{ id, length, width, depth }]
+  // Demolition thickness is picked from a fixed list (inches), not typed.
+  const DEMO_DEPTHS = ['4', '5', '6', '7', '8'];
+  const DEMO_DEPTH_DEFAULT = '4';
+  const demoDepth = (v) => (DEMO_DEPTHS.indexOf(String(v)) >= 0 ? String(v) : DEMO_DEPTH_DEFAULT);
 
   function initState() {
     AppData.MATERIAL_GROUPS.forEach((g) => {
@@ -111,10 +118,25 @@
     return { mainCuyd, extras, cuyd: extras.reduce((t, e) => t + e.cuyd, mainCuyd) };
   }
 
+  // Demolition: Sq.Ft. of sector 1 (#mainDemo) plus the extras, × its own price.
+  function demoTotals() {
+    const mainArea = Calc.areaSqFt($('d_length').value, $('d_width').value);
+    const extras = demos.map((s) => ({ id: s.id, area: Calc.areaSqFt(s.length, s.width) }));
+    const area = extras.reduce((t, e) => t + e.area, mainArea);
+    const price = Calc.num($('d_price').value);
+    return { mainArea, extras, area, price, total: Calc.sqftPrice(area, price) };
+  }
+
   // Extra-sector rows for a list (concrete or footing). Rebuilt only when a sector
   // is added / removed / loaded — never while typing, so the focused input keeps
   // its caret. Live values go through updateEstimated().
-  function sectorRowsHTML(list, widthLabelKey) {
+  // depthOptions (optional): render the thickness as a dropdown of those values.
+  function sectorRowsHTML(list, widthLabelKey, depthOptions) {
+    const depthField = (s) => depthOptions
+      ? `<select data-k="depth">${depthOptions.map((d) =>
+          `<option value="${d}"${String(s.depth) === d ? ' selected' : ''}>${d}"</option>`).join('')}</select>`
+      : `<input type="number" inputmode="decimal" min="0" step="0.01" placeholder="0"
+                   data-k="depth" value="${s.depth}" />`;
     return list.map((s, i) => `
       <div class="sector sector--extra" data-sid="${s.id}">
         <div class="sector__head">
@@ -136,8 +158,7 @@
           </label>
           <label class="field">
             <span>${I18n.t('depth_in')}</span>
-            <input type="number" inputmode="decimal" min="0" step="0.01" placeholder="0"
-                   data-k="depth" value="${s.depth}" />
+            ${depthField(s)}
           </label>
         </div>
       </div>`).join('');
@@ -150,6 +171,10 @@
   function renderFootings() {
     const wrap = $('extraFootings');
     if (wrap) wrap.innerHTML = sectorRowsHTML(footings, 'width_in');
+  }
+  function renderDemos() {
+    const wrap = $('extraDemos');
+    if (wrap) wrap.innerHTML = sectorRowsHTML(demos, 'width_ft', DEMO_DEPTHS);
   }
 
   function addSector() {
@@ -164,6 +189,13 @@
     renderFootings();
     recompute();
     const last = $('extraFootings').lastElementChild;
+    if (last) last.querySelector('input').focus();
+  }
+  function addDemo() {
+    demos.push({ id: 'd_' + makeId(), length: '', width: '', depth: DEMO_DEPTH_DEFAULT });
+    renderDemos();
+    recompute();
+    const last = $('extraDemos').lastElementChild;
     if (last) last.querySelector('input').focus();
   }
 
@@ -199,6 +231,16 @@
       const el = document.querySelector(`[data-sid="${e.id}"] [data-cuyd]`);
       if (el) el.textContent = Calc.fmtNum(e.cuyd);
     });
+
+    // demolition: per-sector Sq.Ft. (ids start with d_, never collide either)
+    const demo = demoTotals();
+    $('d_sqft').textContent = Calc.fmtNum(demo.mainArea);
+    demo.extras.forEach((e) => {
+      const el = document.querySelector(`[data-sid="${e.id}"] [data-cuyd]`);
+      if (el) el.textContent = Calc.fmtNum(e.area);
+    });
+    $('d_area_total').textContent = Calc.fmtNum(demo.area);
+    $('d_total').textContent = Calc.fmtMoney(demo.total);
 
     // the Sq.Ft. price is charged on the summed area — unless it was typed by hand
     if (!areaInput.dataset.touched) areaInput.value = sec.area ? Calc.round2(sec.area) : '';
@@ -240,10 +282,12 @@
       });
     });
 
-    const profit = sqftTotal - materialsTotal;
+    const demoTotal = demoTotals().total;
+    const profit = sqftTotal + demoTotal - materialsTotal;
 
     $('sqft_total').textContent = Calc.fmtMoney(sqftTotal);
     $('t_sqft').textContent = Calc.fmtMoney(sqftTotal);
+    $('t_demo').textContent = Calc.fmtMoney(demoTotal);
     $('t_materials').textContent = Calc.fmtMoney(materialsTotal);
     $('t_profit').textContent = Calc.fmtMoney(profit);
     $('t_profit').classList.toggle('is-negative', profit < 0);
@@ -270,6 +314,7 @@
     const areaOnly = isAreaOnly();
     const sec = sectorTotals();
     const foot = footingTotals();
+    const demo = demoTotals();
     return {
       areaOnly,
       // `concrete` is sector 1; `sectors` holds the extra ones. concreteCuyd is the sum.
@@ -287,17 +332,28 @@
         length: s.length, width: s.width, depth: s.depth, cuyd: Calc.round2(foot.extras[i].cuyd)
       })),
       footingCuyd: Calc.round2(foot.cuyd),
+      // `demolition` is demolition sector 1; `demolitions` holds the extra ones.
+      demolition: { length: $('d_length').value, width: $('d_width').value, depth: $('d_depth').value,
+                    area: Calc.round2(demo.mainArea) },
+      demolitions: demos.map((s, i) => ({
+        length: s.length, width: s.width, depth: s.depth, area: Calc.round2(demo.extras[i].area)
+      })),
+      demoArea: Calc.round2(demo.area),
+      demoPrice: demo.price,
+      demoTotal: Calc.round2(demo.total),
       area, pricePerSqft,
       sqftTotal: Calc.round2(sqftTotal),
       materials,
       materialsTotal: Calc.round2(materialsTotal),
-      profit: Calc.round2(sqftTotal - materialsTotal)
+      profit: Calc.round2(sqftTotal + demo.total - materialsTotal)
     };
   }
 
   function reset() {
-    ['c_length','c_width','c_depth','c_area','f_length','f_width','f_depth','area_sqft',
+    ['c_length','c_width','c_depth','c_area','f_length','f_width','f_depth',
+     'd_length','d_width','d_price','area_sqft',
      'q_title','q_name','q_phone','q_address','q_email'].forEach((id) => { const el = $(id); if (el) el.value = ''; });
+    $('d_depth').value = DEMO_DEPTH_DEFAULT;
     $('area_sqft').dataset.touched = '';
     const cb = $('areaOnly'); if (cb) cb.checked = false;
     applyAreaOnly();
@@ -305,6 +361,8 @@
     renderSectors();
     footings = [];
     renderFootings();
+    demos = [];
+    renderDemos();
     Object.keys(state).forEach((id) => { state[id].qty = 0; });
     currentQuoteId = null;
     renderMaterials();
@@ -314,8 +372,9 @@
   // Is there anything worth warning about before clearing the form?
   function isDirty() {
     if (currentQuoteId) return true;                 // editing a saved quote
-    if (sectors.length || footings.length) return true;   // extra sectors added
+    if (sectors.length || footings.length || demos.length) return true;   // extra sectors added
     const filled = ['c_length','c_width','c_depth','c_area','f_length','f_width','f_depth',
+      'd_length','d_width','d_price',   // d_depth always has a value (dropdown)
       'area_sqft','q_title','q_name','q_phone','q_address','q_email']
       .some((id) => { const el = $(id); return el && String(el.value).trim() !== ''; });
     if (filled) return true;
@@ -334,7 +393,7 @@
   /* ---------- Quote persistence (Cotizaciones) ---------- */
   function saveQuote() {
     const calc = getState();
-    if (!calc.area && !calc.materialsTotal && !calc.sqftTotal) {
+    if (!calc.area && !calc.materialsTotal && !calc.sqftTotal && !calc.demoTotal) {
       App.toast(I18n.t('need_calc'));
       return null;
     }
@@ -386,6 +445,12 @@
     $('f_length').value = foo.length || '';
     $('f_width').value = foo.width || '';
     $('f_depth').value = foo.depth || '';
+    // older quotes have no demolition → everything blank
+    const dem = c.demolition || {};
+    $('d_length').value = dem.length || '';
+    $('d_width').value = dem.width || '';
+    $('d_depth').value = demoDepth(dem.depth);
+    $('d_price').value = c.demoPrice ? c.demoPrice : '';
     // sector-1 area: new quotes keep it in `concrete.area`; older "only area"
     // quotes had no sectors, so the top-level `area` *was* the sector-1 area.
     $('c_area').value = c.areaOnly ? (con.area != null ? con.area : (c.area != null ? c.area : '')) : '';
@@ -402,6 +467,10 @@
       id: 'f_' + makeId(), length: s.length || '', width: s.width || '', depth: s.depth || ''
     }));
     renderFootings();
+    demos = (c.demolitions || []).map((s) => ({
+      id: 'd_' + makeId(), length: s.length || '', width: s.width || '', depth: demoDepth(s.depth)
+    }));
+    renderDemos();
 
     Object.keys(state).forEach((id) => { state[id].qty = 0; });
     (c.materials || []).forEach((m) => {
@@ -439,7 +508,8 @@
     renderEstimated();
     renderMaterials();
 
-    ['c_length','c_width','c_depth','c_area','f_length','f_width','f_depth','price_sqft','rebarSpacing']
+    ['c_length','c_width','c_depth','c_area','f_length','f_width','f_depth',
+     'd_length','d_width','d_depth','d_price','price_sqft','rebarSpacing']
       .forEach((id) => $(id).addEventListener('input', recompute));
     $('area_sqft').addEventListener('input', (e) => { e.target.dataset.touched = '1'; recompute(); });
     $('areaOnly').addEventListener('change', () => {
@@ -453,6 +523,8 @@
     $('addFootingBtn').addEventListener('click', addFooting);
     bindSectorList('extraSectors', () => sectors, (l) => { sectors = l; }, renderSectors);
     bindSectorList('extraFootings', () => footings, (l) => { footings = l; }, renderFootings);
+    $('addDemoBtn').addEventListener('click', addDemo);
+    bindSectorList('extraDemos', () => demos, (l) => { demos = l; }, renderDemos);
 
     $('resetQuoteBtn').addEventListener('click', requestReset);
     $('saveQuoteBtn').addEventListener('click', saveQuote);
@@ -461,6 +533,7 @@
     document.addEventListener('i18n:changed', () => {
       renderSectors();
       renderFootings();
+      renderDemos();
       recompute();
       document.querySelectorAll('[data-name]').forEach((el) => { el.textContent = I18n.material(el.dataset.name); });
       document.querySelectorAll('[data-est-name]').forEach((el) => { el.textContent = I18n.material(el.dataset.estName); });

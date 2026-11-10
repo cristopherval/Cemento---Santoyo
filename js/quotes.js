@@ -50,7 +50,7 @@
           <strong>${escapeHtml(q.title || q.customer && q.customer.name || '—')}</strong>
           <span>${escapeHtml(q.customer && q.customer.name || '')}</span>
           <small>${fmtDate(q.date)} · ${I18n.t('job_size')}: ${Calc.fmtNum(c.area || 0)} Sq.Ft.</small>
-          <small>${I18n.t('charged')}: ${Calc.fmtMoney(c.sqftTotal || 0)} · ${I18n.t('proj_profit')}: ${Calc.fmtMoney(c.profit || 0)}</small>
+          <small>${I18n.t('charged')}: ${Calc.fmtMoney(Calc.quoteCharged(c))} · ${I18n.t('proj_profit')}: ${Calc.fmtMoney(c.profit || 0)}</small>
         </div>
         <div class="histitem__actions histitem__actions--wrap">
           <button class="btn btn--sm btn--ghost" data-edit="${q.id}">${I18n.t('edit')}</button>

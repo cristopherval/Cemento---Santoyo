@@ -39,7 +39,7 @@
       }
     }
     const calc = quote.calc || {};
-    let total = Calc.num(calc.sqftTotal);
+    let total = Calc.round2(Calc.quoteCharged(calc));
     let paid = 0;
     if (quote.invoiceId) {
       const inv = Storage.getHistory().find((r) => r.id === quote.invoiceId);

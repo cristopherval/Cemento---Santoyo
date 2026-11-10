@@ -38,6 +38,13 @@
       return num(areaSqFt) * num(pricePerSqFt);
     },
 
+    /* What the quote charges the customer: Sq.Ft. price + demolition.
+       Older quotes have no demoTotal → just the Sq.Ft. price. */
+    quoteCharged(calc) {
+      const c = calc || {};
+      return num(c.sqftTotal) + num(c.demoTotal);
+    },
+
     lineTotal(qty, unitPrice) {
       return num(qty) * num(unitPrice);
     },

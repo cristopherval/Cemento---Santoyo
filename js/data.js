@@ -78,6 +78,7 @@
     '5" thick',
     '6" thick',
     'Footing',
+    'Concrete Demolition',
     'Dirt Truck'
   ];
 

@@ -4,6 +4,9 @@
     es: {
       concrete_title: 'Concreto (Yardas Cúbicas)',
       footing_title: 'Footing (Yardas Cúbicas)',
+      demo_title: 'Demolición de concreto (Sq.Ft.)',
+      demo_total: 'Precio demolición',
+      total_sqft: 'Total Sq.Ft.',
       length_ft: 'Largo (ft)',
       width_ft: 'Ancho (ft)',
       width_in: 'Ancho (in)',
@@ -212,6 +215,9 @@
     en: {
       concrete_title: 'Concrete (Cubic Yards)',
       footing_title: 'Footing (Cubic Yards)',
+      demo_title: 'Concrete Demolition (Sq.Ft.)',
+      demo_total: 'Demolition Price',
+      total_sqft: 'Total Sq.Ft.',
       length_ft: 'Length (ft)',
       width_ft: 'Width (ft)',
       width_in: 'Width (in)',

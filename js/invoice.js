@@ -154,10 +154,29 @@
     });
   }
 
-  // The line(s) a checked item writes. Everything writes one line except Footing,
-  // which writes one per section.
+  // The "Concrete Demolition" checkbox: one line per demolition section, Sq.Ft.
+  // only — never the price: "Concrete Demolition: 20 ft x 10 ft x 4 in = 200.00 sq ft".
+  // Same rules as Footing (numbered when several, bare name when there's none).
+  const DEMO_LABEL = 'Concrete Demolition';
+  const DEMO_LINE = /^Concrete Demolition( \d+)?: .* = [\d.,]+ sq ft$/;
+  function demoLines() {
+    const calc = currentCalc();
+    const list = !calc ? [] : [calc.demolition].concat(calc.demolitions || [])
+      .filter((s) => s && Calc.num(s.area) > 0);
+    if (!list.length) return [DEMO_LABEL];
+    return list.map((s, i) => {
+      const name = list.length > 1 ? `${DEMO_LABEL} ${i + 1}` : DEMO_LABEL;
+      const depth = Calc.num(s.depth) ? ` x ${Calc.num(s.depth)} in` : '';
+      return `${name}: ${Calc.num(s.length)} ft x ${Calc.num(s.width)} ft${depth} = ${Calc.fmtNum(s.area)} sq ft`;
+    });
+  }
+
+  // The line(s) a checked item writes. Everything writes one line except Footing
+  // and Concrete Demolition, which write one per section.
   function descLines(label) {
-    return label === FOOTING_LABEL ? footingLines() : [descLine(label)];
+    if (label === FOOTING_LABEL) return footingLines();
+    if (label === DEMO_LABEL) return demoLines();
+    return [descLine(label)];
   }
 
   // Index of the checklist item a description line belongs to (-1 if it's the
@@ -167,6 +186,7 @@
     return (AppData.DESC_ITEMS || []).findIndex((label) => {
       if (t === label) return true;
       if (label === FOOTING_LABEL) return FOOTING_LINE.test(t);
+      if (label === DEMO_LABEL) return DEMO_LINE.test(t);
       const p = PRICED_DESC[label];
       return !!p && new RegExp(`^[\\d.,]+ (${label}|${p.plural}) x \\$[\\d.,]+ = \\$[\\d.,]+$`).test(t);
     });
@@ -254,7 +274,8 @@
     $('inv_email').value = cust.email || '';
     $('inv_desc').value = quote.title || '';
     syncChecklistFromDesc();
-    $('inv_total_input').value = quote.calc && quote.calc.sqftTotal ? quote.calc.sqftTotal : '';
+    const charged = Calc.round2(Calc.quoteCharged(quote.calc));   // Sq.Ft. price + demolition
+    $('inv_total_input').value = charged || '';
     $('inv_paid').value = '';
     $('inv_date').value = todayISO();
     recompute();
