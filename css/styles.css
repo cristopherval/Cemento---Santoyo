@@ -617,6 +617,7 @@ img { max-width: 100%; height: auto; }
 .trf-tile--mid { border-color: #d48806; } .trf-tile--mid .trf-tile__v { color: #d48806; }
 .trf-delta { font-size: .72rem; font-weight: 700; color: var(--text-dim); }
 .trf-delta.up { color: #15a05a; } .trf-delta.down { color: var(--red); }
+.trf-range { margin: -6px 0 12px; font-size: .8rem; color: var(--text-dim); }
 .trf-sub { margin: 14px 0 6px; font-size: .78rem; font-weight: 600; color: var(--text-dim); }
 .trf-foot { margin: 6px 0 0; font-size: .72rem; color: var(--text-dim); }
 .trf-chart { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px; }

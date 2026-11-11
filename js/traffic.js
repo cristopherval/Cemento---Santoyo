@@ -74,6 +74,13 @@
     `<div class="trf-tile${tone ? ' trf-tile--' + tone : ''}"><span class="trf-tile__t">${esc(title)}</span>` +
     `<strong class="trf-tile__v">${esc(value)}</strong>${extra || ''}</div>`;
   const sub = (s) => `<span class="trf-tile__s">${esc(s)}</span>`;
+  // "14 oct – 10 nov 2026": the exact period a block's numbers cover.
+  const range = (from, to) => {
+    if (!from || !to) return '';
+    const f = (iso, y) => new Date(iso + 'T12:00:00')
+      .toLocaleDateString(locale(), Object.assign({ day: 'numeric', month: 'short' }, y ? { year: 'numeric' } : {}));
+    return `<p class="trf-range">${esc(f(from) + ' – ' + f(to, true))}</p>`;
+  };
   const errBox = (msg) => `<p class="trf-error">⚠ ${esc(msg)}</p>`;
 
   function bars(rows) {
@@ -147,7 +154,8 @@
       '</div>' + (isErr(data.realtime) && ga ? errBox(data.realtime.error) : '') + '</div>';
 
     // 2. Google
-    h += `<div class="card"><h2 class="card__title">${esc(tx('google'))}</h2>`;
+    h += `<div class="card"><h2 class="card__title">${esc(tx('google'))}</h2>` +
+      (gsc ? range(gsc.range.start, gsc.range.end) : '');
     if (isErr(data.gsc)) h += errBox(data.gsc.error);
     else if (gsc) {
       const t = gsc.totals, p = gsc.previous;
@@ -164,7 +172,8 @@
     h += '</div>';
 
     // 3. Visits
-    h += `<div class="card"><h2 class="card__title">${esc(tx('visits'))}</h2>`;
+    h += `<div class="card"><h2 class="card__title">${esc(tx('visits'))}</h2>` +
+      (ga && ga.daily.length ? range(ga.daily[0].date, ga.daily[ga.daily.length - 1].date) : '');
     if (isErr(data.ga)) h += errBox(data.ga.error);
     else if (ga) {
       const t = ga.totals, p = ga.previous, c = ga.conversions || {}, pc = ga.previousConversions || {};
