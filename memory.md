@@ -2,13 +2,14 @@
 
 Notas para quien trabaje en este repo (personas o Claude): qué es la app, reglas que
 no son obvias leyendo un solo archivo y cómo probar sin romper nada.
-Última actualización: 2026-11-10.
+Última actualización: 2026-11-11.
 
 ## Qué es
 
 - PWA en HTML/CSS/JS puro: **sin build, sin framework, sin `package.json`**. Las
   librerías (jsPDF, html2canvas, Supabase) están copiadas en `assets/vendor/`.
-- Flujo: **Cálculo → Cotizaciones → Invoice → Finanzas**.
+- Flujo: **Cálculo → Cotizaciones → Invoice → Finanzas**, más la pestaña
+  **Tráfico** (estadísticas del sitio santoyosconcrete.com, ver abajo).
 - **Hacer push a `main` = publicar en producción** (GitHub Pages →
   app.santoyosconcrete.com). Los teléfonos con la app instalada lo reciben.
 - Supabase es un espacio compartido (RLS: cualquier usuario autenticado ve todo).
@@ -32,6 +33,7 @@ no son obvias leyendo un solo archivo y cómo probar sin romper nada.
 | `js/storage.js` | Guardado en `localStorage` (`santoyo.*`) |
 | `js/cloud.js` | Login + sincronización con Supabase |
 | `js/config.js` | URL y anon key de Supabase (públicas por diseño) |
+| `js/traffic.js` | Pestaña Tráfico: lee `santoyosconcrete.com/api/traffic` y lo pinta |
 | `js/app.js` | Navegación, ajustes, tema, idioma |
 
 > El `README.md` está desactualizado (menciona `accounting.js` y `logo.svg`, que ya
@@ -63,6 +65,36 @@ no son obvias leyendo un solo archivo y cómo probar sin romper nada.
   desplegable **4", 5", 6", 7", 8"** (4" por defecto), precio propio por Sq.Ft. El
   precio **se suma a la cotización**. El grosor no entra en el cálculo, solo se
   muestra en el invoice.
+
+## Pestaña Tráfico (sitio santoyosconcrete.com)
+
+- El sitio es **otro repo**: `cristopherval/Santoyo---Landing` (Astro en Cloudflare
+  Pages, con **otro** proyecto de Supabase). Ahí vive la función
+  `functions/api/traffic.ts`, que es la única que habla con Google.
+- La misma función sirve a **dos paneles**: el `/admin` del sitio
+  (`TrafficPanel.tsx`) y esta app (`js/traffic.js`). Si cambias qué se muestra en
+  uno, cambia el otro.
+- La app manda su token de Supabase con `X-Panel: app`; la función lo valida
+  contra el Supabase de la app (`APP_SUPABASE_URL` / `APP_SUPABASE_ANON_KEY` en
+  Cloudflare). CORS solo permite `https://app.santoyosconcrete.com`. La CSP de
+  `index.html` permite `https://santoyosconcrete.com` en `connect-src`.
+- Google:
+  - GA4: cuenta **Santoyo's Concrete Work**, propiedad `santoyosconcrete.com`,
+    ID de propiedad `563806005`, medición `G-DLQX7FRN5B`. (En la misma cuenta de
+    Google está la propiedad de la **barbería** — no tocarla.)
+  - Eventos de conversión que manda el sitio: `generate_lead` (/thank-you),
+    `click_call`, `click_sms`, `click_email`.
+  - Cuenta de servicio de solo lectura:
+    `santoyo-reader@santoyo-analytics.iam.gserviceaccount.com` (proyecto de
+    Google Cloud `santoyo-analytics`). Tiene **Lector** en GA4 y **Restringido**
+    en Search Console. Su clave JSON está solo en Cloudflare (`GOOGLE_SA_JSON`).
+  - La organización de Google Cloud bloquea crear claves de cuentas de servicio
+    (`iam.disableServiceAccountKeyCreation`). Para crear otra hay que desactivarla
+    un momento y volver a activarla.
+- Variables en Cloudflare Pages (sitio): `GOOGLE_SA_JSON` y `PSI_API_KEY` (secret),
+  `GA4_PROPERTY_ID`, `APP_SUPABASE_URL`, `APP_SUPABASE_ANON_KEY`.
+- Caché: GA4 y Search Console 15 min, PageSpeed 12 h. Search Console publica con
+  2–3 días de retraso.
 
 ## Cómo probar sin tocar producción
 

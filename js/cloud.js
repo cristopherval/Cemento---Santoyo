@@ -400,5 +400,11 @@
 
   global.Cloud = { start, signIn, signOut, onLocalChange, pullAll, flushQueue, syncNow, nextInvoiceNumber,
                    hasConfig, initGuest, getInvoiceForSigning, submitSignature, sendForSignature,
-                   isEnabled: () => enabled, isOnline: () => ready() && navigator.onLine };
+                   isEnabled: () => enabled, isOnline: () => ready() && navigator.onLine,
+                   // Session token for calls to our own APIs (e.g. /api/traffic on the website).
+                   getAccessToken: async () => {
+                     if (!client) return null;
+                     const { data } = await client.auth.getSession();
+                     return (data && data.session && data.session.access_token) || null;
+                   } };
 })(window);

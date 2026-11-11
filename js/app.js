@@ -15,6 +15,7 @@
     document.querySelectorAll('.bottomnav__btn').forEach((b) =>
       b.classList.toggle('is-active', b.dataset.view === viewId));
     window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+    if (viewId === 'view-traffic' && global.Traffic) Traffic.onShow();
   }
 
   /* ---------- Settings ---------- */

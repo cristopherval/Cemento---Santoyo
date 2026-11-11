@@ -110,6 +110,10 @@
       // --- flow: cotizaciones / finanzas ---
       nav_quotes: 'Cotizaciones',
       nav_finance: 'Finanzas',
+      nav_traffic: 'Tráfico',
+      traffic_title: 'Tráfico del sitio web',
+      traffic_hint: 'santoyosconcrete.com: si funciona y quién llega.',
+      traffic_refresh: 'Actualizar',
       client_data: 'Datos del cliente',
       quote_title: 'Título del trabajo',
       save_quote: 'Guardar cotización',
@@ -321,6 +325,10 @@
       // --- flow: quotes / finance ---
       nav_quotes: 'Quotes',
       nav_finance: 'Finance',
+      nav_traffic: 'Traffic',
+      traffic_title: 'Website traffic',
+      traffic_hint: 'santoyosconcrete.com: whether it works and who visits.',
+      traffic_refresh: 'Refresh',
       client_data: 'Customer details',
       quote_title: 'Job title',
       save_quote: 'Save quote',
